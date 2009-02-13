@@ -1,0 +1,196 @@
+var b4p = new Namespace("http://tempo.intalio.org/workflow/ib4p_20051115");
+var tms = new Namespace("http://tempo.intalio.org/workflow/TaskManagementServices-20051109/");
+
+function taskIdFromB4P(c) {
+  return c.b4p::taskMetaData.b4p::taskId;
+}
+
+process TaskManager {
+  partnerLink userProcessPartnerLink, previousTaskManagerPartnerLink, 
+    TMSPartnerLink, uifwPartnerLink, nextTaskManagerPartnerLink;
+
+  var taskId unique;
+
+  createTaskRequest = receive(userProcessPartnerLink, createTask);
+
+  createTaskResponse.root = <b4p:response><b4p:taskMetaData>
+                              <b4p:taskId/><b4p:processId/>
+                              </b4p:taskMetaData><b4p:status>OK</b4p:status>
+                            </b4p:response>;
+
+  with(tmd: createTaskResponse.root.b4p::taskMetaData) {
+    tmd.b4p::processId = createTaskRequest.root.b4p::taskMetaData.b4p::processId;
+    tmd.b4p::taskId = [concat(b4px:create(), $ode:pid)];
+    taskId = tmd.b4p::taskId;
+  }
+
+  reply(userProcessPartnerLink, createTask, createTaskResponse);
+
+  createRequest.createRequest = <tms:createRequest>
+                                  <tms:task>
+                                    <tms:metadata>
+                                      <tms:taskId/><tms:taskType>activity</tms:taskType><tms:description/>
+                                      <tms:processId/><tms:creationDate/><tms:userOwner/><tms:roleOwner/>
+                                      <tms:claimAction/><tms:revokeAction/><tms:saveAction/>
+                                      <tms:completeAction/><tms:formUrl/><tms:userProcessEndpoint/>
+                                      <tms:userProcessNamespaceURI/><tms:userProcessCompleteSOAPAction/>
+                                    </tms:metadata>
+                                    <tms:input/>
+                                  </tms:task>
+                                  <tms:participantToken/>
+                                </tms:createRequest>;
+
+  with(trmd: createTaskResponse.root.b4p::taskMetaData, 
+      rmd: createRequest.createRequest.tms::task.tms::metadata, 
+      tqmd: createTaskRequest.root.b4p::taskMetaData) {
+    rmd.tms::taskId = trmd.b4p::taskId;
+    rmd.tms::description = tqmd.b4p::description;
+    rmd.tms::processId = tqmd.b4p::processId;
+    rmd.tms::formUrl = tqmd.b4p::formUrl;
+    rmd.tms::userProcessEndpoint = tqmd.b4p::userProcessEndpoint;
+    rmd.tms::userProcessNamespaceURI = tqmd.b4p::userProcessNamespaceURI;
+    rmd.tms::userProcessCompleteSOAPAction = tqmd.b4p::userProcessCompleteSOAPAction;
+    rmd.tms::creationDate = [string(current-dateTime())];
+  }
+  createRequest.createRequest.tms::task.tms::input = createTaskRequest.root.b4p::taskInput;
+  createRequest.createRequest = [bpws:doXslTransform("userRoleOwner.xsl", $createRequest.createRequest,
+      "metadata", $createTaskRequest.root/b4p:taskMetaData)];
+  createRequest.createRequest = [bpws:doXslTransform("actions.xsl", $createRequest.createRequest,
+      "metadata", $createTaskRequest.root/b4p:taskMetaData)];
+
+  invoke(TMSPartnerLink, create, createRequest);
+
+  if (createTaskRequest.root.b4p::taskMetaData.b4p::isChainedBefore == "true") {
+    nextTaskReady.root = <b4p:chainedExecution><b4p:previousTaskId/><b4p:nextTaskId/>
+                          <b4p:nextTaskURL/></b4p:chainedExecution>;
+    with(tr: createTaskRequest.root.b4p::taskMetaData) {
+      nextTaskReady.root.b4p::previousTaskId = tr.b4p::previousTaskId;
+      nextTaskReady.root.b4p::nextTaskId = tr.b4p::taskId;
+      nextTaskReady.root.b4p::nextTaskURL = tr.b4p::formUrl;
+    }
+    wait([now()+'PT5S']);
+    invoke(previousTaskManagerPartnerLink, nextTaskReady, nextTaskReady);
+  }
+
+  taskCompleted = false;
+  taskClaimed = false;
+  taskEscalated = false;
+  while(taskCompleted == false) {
+    pick {
+      receive(uifwPartnerLink, completeTask, {taskIdFromB4P: taskId}) { |completeTaskRequest|
+        completeTaskResponse.root = <b4p:response><b4p:taskMetaData><b4p:taskId/></b4p:taskMetaData>
+                                    <b4p:status>OK</b4p:status></b4p:response>;
+        completeTaskResponse.root.b4p::taskMetaData.b4p::taskId = completeTaskRequest.root.b4p::taskMetaData.b4p::taskId;
+        
+        with(oc: setOutputAndCompleteRequest.setOutputAndCompleteRequest) {
+          oc = <tms:setOutputAndCompleteRequest><tms:taskId/><tms:data/>
+            <tms:participantToken/></tms:setOutputAndCompleteRequest>;
+          oc.tms::taskId = createTaskResponse.root.b4p::taskMetaData.b4p::taskId;
+          oc.tms::data = completeTaskRequest.root/b4p::taskOutput;
+          oc.tms::participantToken = completeTaskRequest.root.b4p::participantToken;
+        }
+
+        invoke(TMSPartnerLink, setOutputAndComplete, setOutputAndCompleteRequest);
+
+        notifyTaskCompletionRequest.root = <b4p:notifyTaskCompletionRequest><b4p:taskMetaData>
+            <b4p:taskId/><b4p:processId/><b4p:userProcessEndpoint/><b4p:userProcessNamespaceURI/>
+            <b4p:userProcessCompleteSOAPAction/><b4p:session/></b4p:taskMetaData>
+            <b4p:taskOutput/><b4p:status>OK</b4p:status></b4p:notifyTaskCompletionRequest>;
+
+        with(ntc: notifyTaskCompletionRequest.root.b4p::taskMetaData, tq: createTaskRequest.root.b4p::taskMetaData) {
+          ntc.b4p::taskId = createTaskResponse.root.b4p::taskMetaData.b4p::taskId;
+          ntc.b4p::processId = tq.b4p::processId;
+          ntc.b4p::userProcessEndpoint = tq.b4p::userProcessEndpoint;
+          ntc.b4p::userProcessNamespaceURI = tq.b4p::userProcessNamespaceURI;
+          ntc.b4p::userProcessCompleteSOAPAction = tq.b4p::userProcessCompleteSOAPAction;
+          ntc.b4p::session = tq.b4p::session;
+        }
+        notifyTaskCompletionRequest.root.b4p::taskOutput = completeTaskRequest.root.b4p::taskOutput;
+
+        invoke(userProcessPartnerLink, notifyTaskCompletion, notifyTaskCompletionRequest) { |notifyTaskCompletionResponse|
+          if (notifyTaskCompletionResponse.root.b4p::isChainedAfter == true) {
+            receive(nextTaskManagerPartnerLink, nextTaskReady) { |nextTaskReady|
+              completeTaskResponse.root = <b4p:response><b4p:taskMetaData><b4p:nextTaskId/>
+                  <b4p:nextTaskURL/></b4p:taskMetaData><b4p:status>OK</b4p:status></b4p:response>;
+              with(ct: completeTaskResponse.root.b4p::taskMetaData) {
+                ct.b4p::nextTaskId = nextTaskReady.root.b4p::nextTaskId;
+                ct.b4p::nextTaskURL = nextTaskReady.root.b4p::nextTaskURL;
+              }
+            }
+          }
+        }
+
+        reply(completeTaskResponse);
+        taskCompleted = true;
+      }
+
+      receive(userProcessPartnerLink, escalateTask, {taskIdFromB4P: taskId}) { |escalateTaskRequest|
+        reassignRequest.reassignRequest = <tms:reassignRequest><tms:taskId/><tms:userOwner/>
+            <tms:roleOwner/><tms:taskState>READY</tms:taskState><tms:participantToken/></tms:reassignRequest>;
+        with(rr: reassignRequest.reassignRequest, etr: escalateTaskRequest.root) {
+          rr.tms::taskId = etr.b4p::taskId;
+          rr.tms::userOwner = etr.b4p::userOwner;
+          rr.tms::roleOwner = etr.b4p::roleOwner;
+        }
+
+        invoke(TMSPartnerLink, reassign, reassignRequest);
+
+        taskClaimed = false;
+        escalateTaskResponse.root = <b4p:escalateTaskResponse><b4p:status>OK</b4p:status></b4p:escalateTaskResponse>;
+        reply(escalateTaskResponse);
+        taskEscalated = true;
+      }
+
+      receive(uifwPartnerLink, claimTask, {taskIdFromB4P: taskId}) { |claimTaskRequest|
+        if (taskClaimed == true) throw(b4p::taskAlreadyClaimed);
+
+        initialOwners.root = <b4p:usersAndRoles><b4p:userOwner/><b4p:roleOwner/></b4p:usersAndRoles>;
+        if (taskEscalated == true) {
+          with(io: initialOwners.root.usersAndRoles) {
+            io.b4p::userOwner = escalateTaskRequest.root/b4p::userOwner;
+            io.b4p::roleOwner = escalateTaskRequest.root/b4p::roleOwner;
+          }
+        } else {
+          with(io: initialOwners.root.usersAndRoles) {
+            io.b4p::userOwner = createTaskRequest.root/b4p::userOwner;
+            io.b4p::roleOwner = createTaskRequest.root/b4p::roleOwner;
+          }
+        }
+        with(rr: reassignRequest.reassignRequest, ct: claimTaskRequest.root) {
+          rr = <tms:reassignRequest><tms:taskId/><tms:userOwner/>
+              <tms:taskState>CLAIMED</tms:taskState><tms:participantToken/></tms:reassignRequest>;
+          rr.tms::taskId = ct.b4p::taskId;
+          rr.tms::userOwner = ct.b4p::claimerUser;
+          rr.tms::participantToken = ct.b4p::participantToken;
+        }
+
+        invoke(TMSPartnerLink, reassign, reassignRequest);
+        taskClaimed = true;
+        claimTaskResponse.root = <b4p:claimTaskResponse><b4p:status>OK</b4p:status></b4p:claimTaskResponse>;
+        reply(claimTaskResponse);
+      }
+
+      receive(uifwPartnerLink, revokeTask, {taskIdFromB4P: taskId}) { |revokeTaskRequest|
+        if (taskClaimed != true) throw(b4p::taskNotClaimed);
+
+        with(rr: reassignRequest.reassignRequest, rt: revokeTaskRequest.root) {
+          rr = <tms:reassignRequest><tms:taskId/><tms:userOwner/>
+              <tms:roleOwner/><tms:taskState>READY</tms:taskState><tms:participantToken/></tms:reassignRequest>;
+          rr = <tms:reassignRequest><tms:taskId/><tms:userOwner/><tms:roleOwner/>
+              <tms:taskState>READY</tms:taskState><tms:participantToken/></tms:reassignRequest>;
+          rr.tms::taskId = rt.b4p::taskId;
+          rr.tms::userOwner = rt.b4p::userOwner;
+          rr.tms::roleOwner = rt.b4p::roleOwner;
+          rr.tms::participantToken = rt.b4p::participantToken;
+        }
+
+        invoke(TMSPartnerLink, reassign, reassignRequest);
+        taskClaimed = false;
+        revokeTaskResponse.root = <b4p:revokeTaskResponse><b4p:status>OK</b4p:status></b4p:revokeTaskResponse>;
+        reply(revokeTaskResponse);
+      }
+
+    }
+  }
+
+}

@@ -1,0 +1,25 @@
+# NOTE: The "==" line serves as a separator between test cases.
+# Each of the following test process should raise an error for the tests to pass.
+
+#=============================================================
+# Empty process
+#
+
+process EmptyProcess {
+}
+
+#=============================================================
+# Wrong request method
+#
+
+process WrongRequestMeth {
+    request("/foo", "foo");
+}
+
+#=============================================================
+# Lexer error
+#
+
+process LexerError {
+    reque@st("/foo", "get");
+}

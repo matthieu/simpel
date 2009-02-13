@@ -1,0 +1,57 @@
+var sref = new Namespace("http://docs.oasis-open.org/wsbpel/2.0/serviceref");
+var addr = new Namespace("http://example.com/addressing");
+
+// Correlation functions
+function auctionIdFromAnswer(answer) {
+  return answer.auctionId;
+}
+function auctionIdFromBuyer(buyer) {
+  return buyer.ID;
+}
+function auctionIdFromSeller(seller) {
+  return seller.auctionId;
+}
+
+// Auction as defined in chapter 15.4 of the BPEL 2.0 specification
+process Auction {
+  partnerLink buyerOrSeller, auctionRegistrar, seller;
+  var auctionId unique;
+
+  // The original BPEL spec example for the auctions process uses a join pattern which
+  // we chose to not support in SimPEL. This is equivalent.
+  receive(buyerOrSeller, submit) { |startData|
+    if (startData.buyer) {
+      buyerData = startData;
+      auctionId = auctionIdFromBuyer(buyerData);
+      sellerData = receive(seller, submit, {auctionIdFromSeller: auctionId});
+    } else {
+      sellerData = startData;
+      auctionId = auctionIdFromSeller(sellerData);
+      buyerData = receive(buyer, submit, {auctionIdFromBuyer: auctionId});
+    }
+  }
+
+  // The endpoint hardcoded in the process is kind of evil but heck, that's the example.
+  auctionRegistrar = <sref:service-ref>
+                       <addr:EndpointReference>
+                         <addr:Address>http://example.com/auction/RegistrationService/</addr:Address>
+                         <addr:ServiceName>as:RegistrationService</addr:ServiceName>
+                       </addr:EndpointReference>
+                     </sref:service-ref>;
+  auctionData.auctionHouseEPR = auctionRegistrar;
+  auctionData.auctionId = sellerData.auctionId;
+  auctionData.amount = 1;
+
+  invoke(actionRegistrar, processData, auctionData);
+  answerData = receive(actionRegistrar, answer, {auctionIdFromAnswer: auctionId});
+
+  parallel {
+     seller = sellerData.endpointReference;
+     sellerAnswerData.thankYouText = "Thank you!";
+     invoke(seller, answer, sellerAnswerData);
+  } and {
+     buyer = buyerData.endpointReference;
+     buyerAnswerData.thankYouText = "Thank you!";
+     invoke(buyer, answer, sellerAnswerData);
+  }
+}

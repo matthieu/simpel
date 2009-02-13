@@ -1,0 +1,33 @@
+var lns = new Namespace("http://example.com/loan-approval/wsdl/");
+var pns = new Namespace("http://example.com/loan-approval");
+
+// Loan approval as defined in chapter 15.3 of the BPEL 2.0 specification
+process pns::LoanApproval {
+  partnerLink customer, assessor, approver;
+  try {
+    parallel {
+      req = receive(customer, req);
+      signal(receive-to-assess, [$req.amount < 10000]);
+      signal(receive-to-approval, [$req.amount >= 10000]);
+    } and {
+      join(receive-to-assess);
+      invoke(assessor, check) { |risk|
+        signal(assess-to-setMessage, [$risk.level = 'low']);
+        signal(assess-to-approval, [$risk.level != 'low']);
+      }
+    } and {
+      join(assess-to-setMessage);
+      approval.accept = "yes";
+      signal(setMessage-to-reply);
+    } and {
+      join(receive-to-approval, assess-to-approval);
+      invoke(approver, approve);
+      signal(approval-to-reply);
+    } and {
+      join(approval-to-reply, setMessage-to-reply);
+      reply(customer, req, approval);
+    }
+  } catch(lns::loanProcessFault) { |error|
+    reply(customer, req, error);
+  }
+}

@@ -1,0 +1,355 @@
+# NOTE: The "==" line serves as a separator between test cases.
+
+#=============================================================
+# Basic receive / reply
+#
+
+process ReceiveReply {
+  receive(my_pl, start_op) { |msg_in|
+    reply(msg_in);
+  }
+}
+
+#=============================================================
+# Static XML
+#
+
+process StaticXML {
+  receive(my_pl, start_op) { |msg_in|
+    resp = <root><count start="0">0</count></root>;
+    while(resp.count < 10) {
+      invoke(partner_pl, partner_start_op, msg_in);
+      resp = receive(partner_pl, partner_reply_op);
+    }
+    reply(resp);
+  }
+}
+
+#=============================================================
+# Basic async receive / invoke
+#
+
+process ReceiveInvoke {
+  msg_in = receive(my_pl, start_op);
+  invoke(other_pl, other_op, msg_in);
+}
+
+#=============================================================
+# Variable declaration
+#
+
+process VariableDecl {
+  msg_in = receive(my_pl, start_op);
+  var temp unique;
+  temp = [$msg_in.part/count + 2];
+  invoke(other_pl, other_op, temp);
+}
+
+#=============================================================
+# Partner links declaration
+#
+
+process ReceiveInvoke {
+  partnerLink my_pl, other_pl;
+
+  msg_in = receive(my_pl, start_op);
+  invoke(other_pl, other_op, msg_in);
+}
+
+#=============================================================
+# Scope with alarm
+#
+
+process ScopeAlarm {
+  msg_in = receive(my_pl, start_op);
+  scope {
+    wait([PT59S]);
+  } onAlarm([PT60S]) {
+    exit;
+  }
+}
+
+#=============================================================
+# Scope with event
+#
+
+process ScopeEvent {
+  msg_in = receive(my_pl, start_op);
+  scope {
+    wait([PT60S]);
+  } onEvent(stop_pl, stop) { |msg|
+    exit;
+  }
+}
+
+#=============================================================
+# Scope with compensate
+#
+
+process ScopeCompensate {
+  msg_in = receive(my_pl, start_op);
+  scope {
+    wait([PT60S]);
+  } compensation {
+    invoke(pl, op, msg);
+  }
+}
+
+#=============================================================
+# Scope with everything
+#
+
+process ScopeAll {
+  msg_in = receive(my_pl, start_op);
+  scope {
+    wait([PT60S]);
+  } onAlarm([PT60S]) {
+    exit;
+  } onEvent(stop_pl, stop) { |msg|
+    exit;
+  } compensation {
+    invoke(pl, op, msg);
+  }
+}
+
+#=============================================================
+# Compact scope
+#
+
+process ScopeAll {
+  msg_in = receive(my_pl, start_op);
+  scope
+    wait([PT60S]);
+  onAlarm([PT60S])
+    exit;
+  compensation
+    invoke(pl, op, msg);
+}
+
+#=============================================================
+# Hello World (basic assignment)
+#
+
+process HelloWorld {
+  receive(my_pl, hello_op) { |msg_in|
+    msg_out = msg_in + " World";
+    reply(msg_out);
+  }
+}
+
+#=============================================================
+# Block invoke
+#
+
+process HelloWorld {
+  receive(my_pl, hello_op) { |msg_in|
+    invoke(other_pl, other_op, msg_in) { |resp|
+      if (resp != "Hello ") throw(WrongMsg);
+    }
+    reply(msg_in);
+  }
+}
+
+#=============================================================
+# Forced Hello World (if and throw)
+#
+
+process HelloWorld {
+  receive(my_pl, hello_op) { |msg_in|
+    if (msg_in != "Hello ") throw(WrongMsg);
+    msg_out = msg_in + " World";
+    reply(msg_out);
+  }
+}
+
+#=============================================================
+# Try / catch / catch all
+#
+
+process TryCatch {
+  msg_in = receive(my_pl, start_op);
+  try {
+    invoke(other_pl, other_op, msg_in);
+  } catch(SomeFault) { |f1|
+    invoke(fault_pl, inform_f1, f1);
+  } catch(OtherFault) { |f2|
+    invoke(fault_pl, inform_f2, f2);
+  } catch(unknown) { |f3|
+    invoke(fault_pl, inform_unknown_fault, f3);
+  }
+}
+
+#=============================================================
+# Namespaces
+#
+
+var pns = new Namespace("ns:process");
+var fns = new Namespace("ns:fault");
+
+process pns::NamespacesProcess {
+  msg_in = receive(my_pl, start_op);
+  try {
+    msg_in.payload.mns::foo = msg_in.payload.mns::foo + " bar";
+    invoke(other_pl, other_op, msg_in);
+  } catch(fns::SomeFault) { |f1|
+    invoke(fault_pl, inform_f1, f1);
+  }
+}
+
+#=============================================================
+# External Counter
+#
+
+function myFunc(p1, p2) {
+   return (p1 + p2 < 10);
+}
+process ExternalCounter {
+  receive(my_pl, start_op) { |msg_in|
+    resp = <root><count start="0">0</count></root>;
+    while(resp < 10) {
+      invoke(partner_pl, partner_start_op, msg_in);
+      resp = receive(partner_pl, partner_reply_op);
+    }
+    reply(resp);
+  }
+}
+
+#=============================================================
+# Simple correlation
+#
+
+function orderId(orderMsg) {
+   return msg.order.orderId;
+}
+
+process SimpleCorrel {
+  orderMsg = receive(my_pl, start_op);
+
+  // The correlation implies orderId(incoming_msg) == orderId(init_msg)
+  var oid unique;
+  oid = orderId(orderMsg);
+  receive(my_pl, corr_op, {orderId: oid});
+}
+
+#=============================================================
+# Two "properties", two message types
+#
+
+function orderIdFromOrder(orderMsg) {
+   return orderMsg.order.orderId;
+}
+function shipIdFromOrder(shipMsg) {
+   return shipMsg.order.shippmentId;
+}
+function orderIdFromShippment(orderMsg) {
+   return orderMsg.shippment.orderId;
+}
+function shipIdFromShippment(shipMsg) {
+   return shipMsg.shippment.shippmentId;
+}
+
+process DoubleCorrel {
+  orderMsg = receive(my_pl, start_op);
+
+  // The correlation implies orderIdFromShippment(incoming_msg) == orderIdFromOrder(order_msg)
+  // and shipIdFromShippment(incoming_msg) == shipIdFromOrder(order_msg),
+  var oid unique, shipId unique;
+  oid = orderIdFromOrder(order_msg);
+  shipId = shipIdFromOrder(order_msg);
+  receive(my_pl, corr_op, { orderIdFromShippment: oid, shipIdFromShippment: shipId });
+}
+
+#=============================================================
+# Basic flow
+#
+
+process BasicFlow {
+  orderMsg = receive(my_pl, start_op);
+  parallel {
+    invoke(partner1_pl, partner1_op, orderMsg);
+  } and {
+    invoke(partner2_pl, partner2_op, orderMsg);
+  }
+}
+
+#=============================================================
+# Compact flow
+#
+
+process CompactFlow {
+  orderMsg = receive(my_pl, start_op);
+  parallel
+    invoke(partner1_pl, partner1_op, orderMsg);
+  and
+    invoke(partner2_pl, partner2_op, orderMsg);
+}
+
+#=============================================================
+# Flow with signals
+#
+
+process BasicFlow {
+  orderMsg = receive(my_pl, start_op);
+  parallel {
+    invoke(partner1_pl, partner1_op, orderMsg);
+    signal(branch1);
+  } and {
+    invoke(partner2_pl, partner2_op, orderMsg);
+    signal(branch2);
+  } and {
+    join(branch1, branch2, [$branch1 and $branch2]);
+    invoke(partner_done_pl, partner_done_op, orderMsg);
+  }
+}
+
+#=============================================================
+# Naming Conflicts
+#
+
+process SimilarNames {
+  try {
+    parallel {
+      receive_var = receive(receive_pl, receive_op);
+      signal(signal-done, [$foo > 1]);
+    }
+  } catch(catchns::Catch) { |catch_var|
+    invoke(invoke_pl, invoke_op, catch_var);
+  }
+}
+
+#=============================================================
+# Different condition combinations
+#
+
+process ConditionsCombo {
+  receive(my_pl, start_op) { |msg_in|
+    if (msg_in.foo) {
+      wait([PT1S]);
+    } else if (msg_in.bar) {
+      wait([PT1S]);
+    } else {
+      wait([PT1S]);
+    }
+
+    if (msg_in.baz) {
+      wait([PT1S]);
+    }
+
+    if (msg_in.baz) wait([PT1S]);
+    else wait([PT1S]);
+
+    reply(msg_in);
+  }
+}
+
+#=============================================================
+# With
+#
+
+process WithTest {
+  foo = receive(my_pl, start_op);
+  with(bz1: foo.bar.baz1, bz2: foo.bar.baz2) {
+    bz1.name = bz2.name;
+    bz1.address = bz2.address;
+  }
+}
