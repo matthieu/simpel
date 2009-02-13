@@ -39,10 +39,10 @@ XERCES              = "xerces:xercesImpl:jar:2.8.1"
 
 repositories.remote << "http://repo1.maven.org/maven2"
 
-desc "ODE SimPEL process execution language."
+desc "SimPEL Process Execution Language."
 define "simpel" do
   project.version = VERSION_NUMBER
-  project.group = "com intalio.simpel"
+  project.group = "com.intalio.simpel"
 
   compile.options.source = "1.5"
   compile.options.target = "1.5"
