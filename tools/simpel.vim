@@ -1,7 +1,7 @@
 " Vim syntax file
-" Language:		SimPEL
-" Maintainer:		Apache ODE Developers <dev@ode.apache.org>
-" Last Change:		2007 Dec 18
+" Language:		      SimPEL
+" Maintainer:	    	Matthieu Riou <mriou@intalio.com>
+" Last Change:		  2007 Dec 18
 " Original Author:	Matthieu Riou <matthieu@offthelip.org>
 
 if version < 600
@@ -13,7 +13,7 @@ endif
 syn keyword simpelCommentTodo		TODO FIXME XXX TBD contained
 syn region  simpelString		start=+"+  skip=+\\\\\|\\"+  end=+"+
 syn match   simpelNumber	       "-\=\<\d\+L\=\>\|0[xX][0-9a-fA-F]\+\>"
-syn match   simpelLineComment		"#.*$"
+syn match   simpelLineComment		"//*$"
 syn match   simpelBlockParam		"|.*|$"
 syn keyword simpelConditional		if else
 syn keyword simpelRepeat		while for forall do until
@@ -22,9 +22,9 @@ syn keyword simpelException		try catch throw
 syn keyword simpelBoolean		true false
 syn keyword simpelIdentifier		var partnerLink namespace
 syn keyword simpelReserved		process scope event alarm compensation pick
-syn keyword simpelStatement		invoke receive reply wait compensate exit join signal with
+syn keyword simpelStatement		invoke receive request reply wait compensate exit join signal with
 
-syn keyword simpelFunction      	function
+syn keyword simpelFunction    function
 syn match   simpelBraces	   	"[{}\[\]]"
 syn match   simpelParens	   	"[()]"
 
