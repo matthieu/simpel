@@ -23,7 +23,7 @@ require "buildr/antlr"
 VERSION_NUMBER = "0.1-SNAPSHOT"
 NEXT_VERSION = "0.1"
 
-ANTLR               = ["org.antlr:antlr:jar:3.0.1", "org.antlr:stringtemplate:jar:3.0"]
+ANTLR               = ["org.antlr:antlr:jar:3.1.1", "org.antlr:stringtemplate:jar:3.2"]
 COMMONS             = struct(
   :collections      =>"commons-collections:commons-collections:jar:3.1",
   :lang             =>"commons-lang:commons-lang:jar:2.1",
@@ -38,6 +38,8 @@ WSDL4J              = "wsdl4j:wsdl4j:jar:1.6.2"
 XERCES              = "xerces:xercesImpl:jar:2.8.1"
 
 repositories.remote << "http://repo1.maven.org/maven2"
+
+Buildr::ANTLR::REQUIRES = ANTLR + ["antlr:antlr:jar:2.7.7"]
 
 desc "SimPEL Process Execution Language."
 define "simpel" do

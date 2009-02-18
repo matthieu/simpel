@@ -258,6 +258,7 @@ assign
 @init { paraphrases.push("in an assignment"); }
 @after { paraphrases.pop(); }
         : path_expr '=' rvalue -> ^(ASSIGN path_expr rvalue);
+
 rvalue
 @init { paraphrases.push("in an assignment right value"); }
 @after { paraphrases.pop(); }

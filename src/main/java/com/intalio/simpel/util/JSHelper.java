@@ -26,7 +26,7 @@ public class JSHelper {
         source.setDelegate(lexer);
 
         LinkedListToken current = (LinkedListToken)stream.get(stream.size());
-        LinkedListToken tok = new LinkedListToken(SimPELLexer.T80, tail.substring(0, closingIndex));
+        LinkedListToken tok = new LinkedListToken(SimPELLexer.T__80, tail.substring(0, closingIndex));
         current.setNext(tok);
         tok.setPrev(current);
         return new LinkedListTree(tok);

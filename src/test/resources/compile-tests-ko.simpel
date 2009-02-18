@@ -17,6 +17,13 @@ process WrongRequestMeth {
 }
 
 #=============================================================
+# Parser error, id instead of string
+#
+
+process LexerError {
+    tokenResp = request("post", googleLoginUrl);
+}
+#=============================================================
 # Lexer error
 #
 

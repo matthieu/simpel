@@ -86,7 +86,7 @@ namespace
 
 // Process
 process
-scope BPELScope Parent;
+scope BPELScope, Parent;
 	:	^(PROCESS ^(NS pr=ID? nm=ID) 
 		{ OBuilder.StructuredActivity<OScope> scope = builder.buildProcess(text($pr), text($nm));
 		  $BPELScope::oscope = scope.getOActivity(); 
@@ -128,7 +128,7 @@ signal	:	^(SIGNAL ID expr?);
 join	:	^(JOIN ID+ expr?);
 
 if_ex	
-scope ExprContext Parent;
+scope ExprContext, Parent;
 	:	^(IF {
         $ExprContext::expr = new SimPELExpr(builder.getProcess());
     }
@@ -141,7 +141,7 @@ scope ExprContext Parent;
     (^(ELSE b2=(body)))?);
 
 while_ex
-scope ExprContext Parent;
+scope ExprContext, Parent;
 	:	^(WHILE {
         $ExprContext::expr = new SimPELExpr(builder.getProcess());
     }
@@ -172,7 +172,7 @@ scope BPELScope;
 catch_ex:	^(CATCH ^(NS ID ID?) param_block);
 
 scope_ex
-scope BPELScope Parent;
+scope BPELScope, Parent;
 	:	^(SCOPE {
             OBuilder.StructuredActivity<OScope> oscope = builder.build(OScope.class, $BPELScope[-1]::oscope, $Parent[-1]::activity);
             $BPELScope::oscope = oscope.getOActivity();
@@ -185,7 +185,7 @@ scope_stmt
 onevent	:	^(ONEVENT ID ID param_block);
 onalarm	:	^(ONALARM expr body);
 onquery
-scope ReceiveBlock Parent;
+scope ReceiveBlock, Parent;
     :	^(ONQUERY ID {
             OBuilder.StructuredActivity<OEventHandler.OEvent> on = builder.build($ID, OEventHandler.OEvent.class,
                 $BPELScope::oscope, $Parent[-1]::activity, deepText($ID), "GET");
@@ -194,7 +194,7 @@ scope ReceiveBlock Parent;
         }
         body);
 onrec
-scope ReceiveBlock Parent;
+scope ReceiveBlock, Parent;
     :	^(ONRECEIVE ID {
             OBuilder.StructuredActivity<OEventHandler.OEvent> on = builder.build($ID, OEventHandler.OEvent.class,
                 $BPELScope::oscope, $Parent[-1]::activity, deepText($ID), "POST");
@@ -203,7 +203,7 @@ scope ReceiveBlock Parent;
         }
         body);
 onupd
-scope ReceiveBlock Parent;
+scope ReceiveBlock, Parent;
     :	^(ONUPDATE ID {
             OBuilder.StructuredActivity<OEventHandler.OEvent> on = builder.build($ID, OEventHandler.OEvent.class,
                 $BPELScope::oscope, $Parent[-1]::activity, deepText($ID), "PUT");
@@ -260,7 +260,7 @@ scope ReceiveBlock;
 		} )
 		(prb=(param_block))?;
 request
-scope ReceiveBlock ExprContext;
+scope ReceiveBlock, ExprContext;
     :	^(REQUEST {
             $ExprContext::expr = new SimPELExpr(builder.getProcess());
         }

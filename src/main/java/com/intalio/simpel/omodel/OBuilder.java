@@ -124,7 +124,7 @@ public class OBuilder extends BaseCompiler {
         _konstExprLang = new OExpressionLanguage(_oprocess, null);
         _konstExprLang.expressionLanguageUri = "uri:www.fivesight.com/konstExpression";
         _konstExprLang.properties.put("runtime-class",
-                "com.intalio.bpel.rtrep.v2.KonstExpressionLanguageRuntimeImpl");
+                "org.apache.ode.bpel.rtrep.v2.KonstExpressionLanguageRuntimeImpl");
         _oprocess.expressionLanguages.add(_konstExprLang);
 
         // Implicit scope that wraps a process
