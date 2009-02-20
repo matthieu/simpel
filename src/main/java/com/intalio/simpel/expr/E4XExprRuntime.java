@@ -7,6 +7,7 @@ import org.apache.ode.bpel.common.FaultException;
 import com.intalio.simpel.omodel.SimPELExpr;
 import org.apache.ode.utils.DOMUtils;
 import org.apache.ode.utils.xsd.Duration;
+import org.apache.log4j.Logger;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Delegator;
@@ -31,6 +32,8 @@ import java.io.ByteArrayInputStream;
  */
 public class E4XExprRuntime implements ExpressionLanguageRuntime {
 
+    private static final Logger __log = Logger.getLogger("com.intalio.simpel.expr");
+    
     private static ConcurrentHashMap<String, Scriptable> globalStateCache = new ConcurrentHashMap<String, Scriptable>();
 
     public void initialize(Map map) throws ConfigurationException {
@@ -45,7 +48,7 @@ public class E4XExprRuntime implements ExpressionLanguageRuntime {
 
         // First evaluating the assignment
         SimPELExpr expr = (SimPELExpr) oexpr;
-        Object res = cx.evaluateString(scope, expr.getExpr(), "<expr>", 0, null);
+        Object res = e4xEval(cx, scope, expr.getExpr());
         if (res instanceof String) return (String) res;
         else return res.toString();
     }
@@ -60,7 +63,7 @@ public class E4XExprRuntime implements ExpressionLanguageRuntime {
 
         // First evaluating the assignment
         SimPELExpr expr = (SimPELExpr) oexpr;
-        Object res = cx.evaluateString(scope, expr.getExpr(), "<expr>", 0, null);
+        Object res = e4xEval(cx, scope, expr.getExpr());
         if (res instanceof Boolean) return (Boolean)res;
         else throw new FaultException(new QName("e4xEvalFailure"), "Failed to evaluate "
                 + expr.getExpr() + " as a boolean value");
@@ -84,7 +87,7 @@ public class E4XExprRuntime implements ExpressionLanguageRuntime {
         if (expr.getLValue() != null)
             forged = expr.getLValue() + " = " + expr.getExpr();
 
-        Object res = cx.evaluateString(scope, forged, "<expr>", 0, null);
+        Object res = e4xEval(cx, scope, forged);
         // Second extracting the resulting variable value
         if (expr.getLValue() != null) {
             if (scope.getEnv().get(expr.getLVariable()) != null) {
@@ -138,6 +141,16 @@ public class E4XExprRuntime implements ExpressionLanguageRuntime {
 
     public Node evaluateNode(OExpression oExpression, EvaluationContext evaluationContext) throws FaultException {
         return (Node) evaluate(oExpression, evaluationContext).get(0);
+    }
+
+    private Object e4xEval(Context cx, Scriptable scope, String expr) {
+        if (__log.isDebugEnabled()) __log.debug("Executing Javascript expression: " + expr);
+        try {
+            return cx.evaluateString(scope, expr, "<expr>", 0, null);
+        } catch (RuntimeException e) {
+            if (__log.isInfoEnabled()) __log.info("Error when executing Javascript (" + expr + "): " + e.getMessage());
+            throw e;
+        }
     }
 
     private class ODEDelegator extends Delegator  {
