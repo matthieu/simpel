@@ -47,8 +47,7 @@ public class E4XExprRuntime implements ExpressionLanguageRuntime {
         SimPELExpr expr = (SimPELExpr) oexpr;
         Object res = cx.evaluateString(scope, expr.getExpr(), "<expr>", 0, null);
         if (res instanceof String) return (String) res;
-        else throw new FaultException(new QName("e4xEvalFailure"), "Failed to evaluate "
-                + expr.getExpr() + " as a string value");
+        else return res.toString();
     }
 
     public boolean evaluateAsBoolean(OExpression oexpr, EvaluationContext evaluationContext) throws FaultException {
@@ -194,7 +193,10 @@ public class E4XExprRuntime implements ExpressionLanguageRuntime {
                         if (v.type.underlyingType == OVarType.NUMBER_TYPE) return Double.valueOf(rawValue);
                         else return rawValue;
                     }
-                    else node = DOMUtils.getFirstChildElement((Element)node);
+                    else {
+                        Element child = DOMUtils.getFirstChildElement((Element)node);
+                        if (!child.getNodeName().equals("headers")) node = child;
+                    }
                 }
 
                 // When we're querying on headers, the sub-element is supposed to be right under the
