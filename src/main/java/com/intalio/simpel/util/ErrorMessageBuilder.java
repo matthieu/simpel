@@ -4,6 +4,7 @@ import org.antlr.runtime.RecognitionException;
 import org.antlr.runtime.NoViableAltException;
 import org.antlr.runtime.MismatchedTokenException;
 import org.antlr.runtime.EarlyExitException;
+import uk.co.badgersinfoil.e4x.E4XRecognitionException;
 
 /**
  * ANTLR-specific error message builder. Analyzes parser exceptions raised by ANTLR and
@@ -21,6 +22,8 @@ public class ErrorMessageBuilder {
             msg = "Syntax error, unexpected token " + e.token.getText() + ", expecting " + tokenNames[mte.expecting];
         } else if (e instanceof EarlyExitException) {
             msg = "At least one element is required at " + e.token.getText();
+        } else if (e instanceof E4XRecognitionException) {
+            msg = ((E4XRecognitionException)e).message;
         }
         if (msg != null && paraphrase != null) msg = msg + " " + paraphrase;
         return msg;

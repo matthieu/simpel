@@ -23,10 +23,19 @@ process WrongRequestMeth {
 process LexerError {
     tokenResp = request("post", googleLoginUrl);
 }
+
 #=============================================================
 # Lexer error
 #
 
 process LexerError {
     reque@st("/foo", "get");
+}
+
+#=============================================================
+# Malformated XML
+#
+
+process MalfXML {
+    foo = <start>foo<start>;
 }

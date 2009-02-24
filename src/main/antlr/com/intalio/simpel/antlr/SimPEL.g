@@ -12,7 +12,7 @@ tokens {
     REQUEST; REQ_BASE; ONEVENT; ONALARM; ONRECEIVE; ONUPDATE; ONQUERY; COMPENSATION; COMPENSATE;
     CORRELATION; CORR_MAP; PARTNERLINK; VARIABLE; BLOCK_PARAM;
     SIGNAL; JOIN; WITH; MAP;
-    EXPR; EXT_EXPR; XML_LITERAL; CALL; NAMESPACE; NS; PATH;
+    EXPR; EXT_EXPR; XML_LITERAL; CALL; NAMESPACE; NS; PATH; XML;
 }
 
 @lexer::header {
@@ -27,6 +27,7 @@ package com.intalio.simpel.antlr;
 import uk.co.badgersinfoil.e4x.antlr.LinkedListTokenStream;
 import uk.co.badgersinfoil.e4x.antlr.LinkedListTree;
 import uk.co.badgersinfoil.e4x.E4XHelper;
+import uk.co.badgersinfoil.e4x.E4XRecognitionException;
 import com.intalio.simpel.ErrorListener;
 import com.intalio.simpel.util.ErrorMessageBuilder;
 import com.intalio.simpel.util.JSHelper;
@@ -335,7 +336,17 @@ xml_literal
 @init { LinkedListTree xml = null; }
 	:	// We have to have the LT in the outer grammar for lookahead
 		// to be able to predict that the xmlLiteral rule should be used.
-		'<' { xml=parseXMLLiteral(); } -> { xml };
+		'<' {
+		    try {
+    		    xml=parseXMLLiteral();
+            } catch (RecognitionException re) {
+                 if (re instanceof E4XRecognitionException) {
+                     re.line = retval.start.getLine();
+                     re.charPositionInLine = retval.start.getCharPositionInLine();
+                 }
+                 throw re;
+            }
+		} -> { xml };
 
 e4x_expr
         : L_CURLY! s_expr '}'!;
