@@ -353,3 +353,11 @@ process WithTest {
     bz1.address = bz2.address;
   }
 }
+
+#=============================================================
+# Embedded E4X and JS expression
+#
+
+process WithTest {
+  foo = <foo>{ bar.baz[2] + 4}</foo>;
+}

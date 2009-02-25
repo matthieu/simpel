@@ -29,7 +29,7 @@ public class E4XExprParserHelper implements E4XExpressionParser {
             // TODO: better exception type?
             throw new RuntimeException(e);
         }
-        LinkedListTree ast = (LinkedListTree) parser.e4x_expr().getTree();
+        LinkedListTree ast = (LinkedListTree) parser.js_block().getTree();
         tail = parser.getInputTail();
         // skip over the XML in the original, underlying CharStream
         cs.seek(cs.index() + (initialTailLength - tail.length()));

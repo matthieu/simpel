@@ -348,12 +348,12 @@ xml_literal
             }
 		} -> { xml };
 
-e4x_expr
-        : L_CURLY! s_expr '}'!;
+//e4x_expr
+//        : L_CURLY! s_expr '}'!;
 
 js_block
 @init { LinkedListTree js = null; }
-	:	'{' { js=parseJSLiteral(); } -> { js };
+	:	L_CURLY { js=parseJSLiteral(); } -> { js };
 
 EXT_EXPR
 	:	'[' (options {greedy=false;} : .)* ']';
