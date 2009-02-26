@@ -39,3 +39,11 @@ process LexerError {
 process MalfXML {
     foo = <start>foo<start>;
 }
+
+#=============================================================
+# Wrong resource reference
+#
+
+process UnknownResource {
+    receive(foo);
+}

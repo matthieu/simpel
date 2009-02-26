@@ -252,9 +252,10 @@ scope ReceiveBlock;
                     $Parent::activity, text($p), text($o), $ExprContext::expr);
             else
                 rec = builder.build($p, OPickReceive.class, $BPELScope::oscope,
-                    $Parent::activity, text($p), text($o), null);
+                    $Parent::activity, text($p), text($o), new SimPELExpr(null));
 
-		    $ReceiveBlock::activity = rec.getOActivity().onMessages.get(0);
+            if (rec.getOActivity().onMessages.size() > 0)
+		        $ReceiveBlock::activity = rec.getOActivity().onMessages.get(0);
             // TODO support for multiple "correlations"
             if ($correlation.corr != null) builder.addCorrelationMatch(rec.getOActivity(), $correlation.corr); 
 		} )

@@ -20,6 +20,7 @@ import org.antlr.runtime.tree.Tree;
 import javax.wsdl.PortType;
 import javax.xml.namespace.QName;
 import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 /**
@@ -55,9 +56,15 @@ public class OBuilder extends BaseCompiler {
     }
 
     public StructuredActivity build(Tree t, Class oclass, OScope oscope, StructuredActivity parent, Object... params) {
+        OActivity oactivity;
         try {
-            OActivity oactivity = (OActivity) oclass
-                    .getConstructor(OProcess.class, OActivity.class).newInstance(_oprocess, parent.getOActivity());
+            oactivity = (OActivity) oclass.getConstructor(OProcess.class, OActivity.class)
+                    .newInstance(_oprocess, parent.getOActivity());
+        } catch (Exception e) {
+            throw new CompilationException("Couldn't build an activity of type " + oclass);
+        }
+
+        try {
             Method buildMethod = null;
             for (Method method : OBuilder.class.getMethods())
                 if (method.getName().equals("build" + oclass.getSimpleName().substring(1))) buildMethod = method;
@@ -76,13 +83,13 @@ public class OBuilder extends BaseCompiler {
                 // Report an error and try to recover from it to get further down in the tree
                 errors.reportRecognitionError(t != null ? t.getLine() : -1, t != null ? t.getCharPositionInLine() : -1,
                         e.getCause().getMessage(), (Exception) e.getCause());
-                return new SimpleActivity<OInvoke>(new OInvoke(_oprocess, (OActivity) parent.getOActivity()));
+                return new SimpleActivity(oactivity);
             } else {
                 __log.debug(e);
                 // Unrecoverable error, trying to report as much as possible
                 errors.reportRecognitionError(t != null ? t.getLine() : -1, t != null ? t.getCharPositionInLine() : -1,
                         "Unrecoverable error, couldn't build activity of type " + oclass +
-                                (t != null ? (" near " + t.getText()) : ""), e);
+                                (t != null ? (" near " + t.getText()) : ""), (Exception) e.getCause());
 
                 CompilationException ce = new CompilationException(e);
                 ce.errors = errors.getErrors();
@@ -189,11 +196,10 @@ public class OBuilder extends BaseCompiler {
                                            String operation, SimPELExpr expr) {
         OPickReceive.OnMessage onMessage = new OPickReceive.OnMessage(_oprocess);
         if (operation == null) {
+            if (webResources.get(partnerLinkOrResource) == null)
+                throw new BuilderException("Unknown resource declared in receive: " + partnerLinkOrResource);
             onMessage.resource = copyResource(webResources.get(partnerLinkOrResource), "POST");
             onMessage.resource.setInbound(true);
-            if (onMessage.resource == null) {
-                throw new BuilderException("Unknown resource declared in receive: " + partnerLinkOrResource);
-            }
             _oprocess.providedResources.add(onMessage.resource);
         } else {
             onMessage.partnerLink = buildPartnerLink(oscope, partnerLinkOrResource, operation, true, true);
@@ -211,7 +217,7 @@ public class OBuilder extends BaseCompiler {
         }
 
         // Is this receive part of an assignment? In this case the input var is the lvalue.
-        if (expr != null) {
+        if (expr != null && expr.getExpr() != null) {
             onMessage.variable = resolveVariable(oscope, expr.getLValue(),
                     onMessage.operation != null ? onMessage.operation.getName() : null, true);
         }
