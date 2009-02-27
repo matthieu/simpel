@@ -217,7 +217,7 @@ public class OBuilder extends BaseCompiler {
         }
 
         // Is this receive part of an assignment? In this case the input var is the lvalue.
-        if (expr != null && expr.getExpr() != null) {
+        if (expr != null) {
             onMessage.variable = resolveVariable(oscope, expr.getLValue(),
                     onMessage.operation != null ? onMessage.operation.getName() : null, true);
         }
