@@ -12,7 +12,7 @@ tokens {
     REQUEST; REQ_BASE; ONEVENT; ONALARM; ONRECEIVE; ONUPDATE; ONQUERY; COMPENSATION; COMPENSATE;
     CORRELATION; CORR_MAP; PARTNERLINK; VARIABLE; BLOCK_PARAM;
     SIGNAL; JOIN; WITH; MAP;
-    EXPR; EXT_EXPR; XML_LITERAL; CALL; NAMESPACE; NS; PATH; XML;
+    EXPR; EXT_EXPR; XML_LITERAL; CALL; NAMESPACE; NS; PATH; XML; PRED;
 }
 
 @lexer::header {
@@ -150,7 +150,8 @@ flow
 @after { paraphrases.pop(); }
         :	'parallel' b+=body ('and' b+=body)* -> ^(FLOW $b*);
 signal	:	'signal' '('ID (',' expr)? ')' -> ^(SIGNAL ID expr?);
-join	:	'join' '(' k+=ID (',' k+=ID)* (',' expr)? ')' -> ^(JOIN $k+ expr?);
+join
+        :	'join' '(' k+=ID (',' k+=ID)* (',' expr)? ')' -> ^(JOIN $k+ expr?);
 
 if_ex
 @init { paraphrases.push("in a if expression"); }
@@ -314,7 +315,7 @@ corr_mapping
 funct	:	'function'^ f=ID '(' ID? (','! ID)* ')' js_block;
 
 // Expressions
-expr	:	s_expr | EXT_EXPR;
+expr	:	s_expr;
 
 funct_call
 	    :	fn=ID '(' (e+=expr)? (',' e+=expr)* ')' -> ^(CALL ID $e*);
@@ -326,7 +327,12 @@ mexpr	:	unary (('*'|'/') ^ unary)*;
 unary   :   ((('!'|'-')^)? atom) | STRING;
 atom	:	path_expr | INT | '(' s_expr ')' -> s_expr | funct_call;
 path_expr
-	:	pelmt+=ns_id ('.' pelmt+=ns_id)* -> ^(PATH $pelmt+);
+	:	pelmt+=ns_id ('.' pelmt+=ns_id)* predicate? -> ^(PATH $pelmt+);
+predicate
+    : L_SQUARE (
+         INT -> ^(PRED INT)
+       | STRING -> ^(PRED STRING)
+       ) R_SQUARE;
 
 ns_id	:	(pr=ID '::')? loc=ID ('(' ')')? -> ^(NS $pr? $loc);
 
@@ -348,15 +354,12 @@ xml_literal
             }
 		} -> { xml };
 
-//e4x_expr
-//        : L_CURLY! s_expr '}'!;
+e4x_expr
+        : L_CURLY! s_expr '}'!;
 
 js_block
 @init { LinkedListTree js = null; }
-	:	L_CURLY { js=parseJSLiteral(); } -> { js };
-
-EXT_EXPR
-	:	'[' (options {greedy=false;} : .)* ']';
+	:	'{' { js=parseJSLiteral(); } -> { js };
 
 // Basic tokens
 VAR_MODS:	'unique' | 'external' | ('string' | 'int' | 'float');
@@ -368,6 +371,9 @@ ESCAPE_SEQ
 	:	'\\' ('b'|'t'|'n'|'f'|'r'|'\"'|'\''|'\\');
 
 L_CURLY: '{';
+
+L_SQUARE: '[';
+R_SQUARE: ']';
 
 SL_COMMENTS
 	:	'//' .* CR { $channel = HIDDEN; };

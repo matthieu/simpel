@@ -26,6 +26,8 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.List;
 
+import org.junit.Ignore;
+
 /**
  * @author Matthieu Riou <mriou@intalio.com>
  */
@@ -110,23 +112,25 @@ public class SimPELCompilerTest extends TestCase {
         }
     }
 
-    public void testLoanApproval() throws Exception {
-        SimPELCompiler c = compiler();
-        c.compileProcess(readProcess("loan-approval.simpel"), desc);
-        reportErrors("Loan approval", c);
-    }
-
     public void testAuction() throws Exception {
         SimPELCompiler c = compiler();
         c.compileProcess(readProcess("auction.simpel"), desc);
         reportErrors("Auction service", c);
     }
 
-    public void testTaskManager() throws Exception {
-        SimPELCompiler c = compiler();
-        c.compileProcess(readProcess("task-manager.simpel"), desc);
-        reportErrors("Auction service", c);
-    }
+    // These two are full of [..] embedded XPath which has been removed (conflicts with
+    // arrays). TODO see whether to remove that entirely
+//    public void testLoanApproval() throws Exception {
+//        SimPELCompiler c = compiler();
+//        c.compileProcess(readProcess("loan-approval.simpel"), desc);
+//        reportErrors("Loan approval", c);
+//    }
+//
+//    public void testTaskManager() throws Exception {
+//        SimPELCompiler c = compiler();
+//        c.compileProcess(readProcess("task-manager.simpel"), desc);
+//        reportErrors("Auction service", c);
+//    }
 
     private String readProcess(String fileName) throws Exception {
         BufferedReader reader = new BufferedReader(new FileReader(

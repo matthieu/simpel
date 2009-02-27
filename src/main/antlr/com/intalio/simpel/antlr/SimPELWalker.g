@@ -358,7 +358,7 @@ xmlMarkup
 	:	XML_COMMENT | XML_CDATA | XML_PI;
 
 // Expressions
-expr	:	s_expr | EXT_EXPR;
+expr	:	s_expr;
 
 funct_call
 	:	^(CALL ID expr*);
@@ -369,12 +369,19 @@ path_expr
 	    (i=ns_id {
 	        if (buff.length() > 0) buff.append(".");
 	        buff.append($i.qid);
-	    } )+) {
+	    } )+)
+
+	    (p=predicate { buff.append($p.pred); } )?
+	    {
             builder.addExprVariable($BPELScope::oscope, $ExprContext::expr, buff.toString());
         };
 ns_id
 returns [String qid]
     :	^(NS p=ID? n=ID) { qid = p == null ? n.getText() : (p.getText() + "::" + n.getText()); };
+
+predicate
+returns [String pred]
+    : ^(PRED p=(INT | STRING)) { pred = p.getText(); };
 
 s_expr	:	^('==' s_expr s_expr) 
 	|	^('!=' s_expr s_expr) 

@@ -41,7 +41,7 @@ process ReceiveInvoke {
 process VariableDecl {
   msg_in = receive(my_pl, start_op);
   var temp unique;
-  temp = [$msg_in.part/count + 2];
+  temp = msg_in.part / count + 2;
   invoke(other_pl, other_op, temp);
 }
 
@@ -63,8 +63,8 @@ process ReceiveInvoke {
 process ScopeAlarm {
   msg_in = receive(my_pl, start_op);
   scope {
-    wait([PT59S]);
-  } onAlarm([PT60S]) {
+    wait("PT59S");
+  } onAlarm("PT60S") {
     exit;
   }
 }
@@ -76,7 +76,7 @@ process ScopeAlarm {
 process ScopeEvent {
   msg_in = receive(my_pl, start_op);
   scope {
-    wait([PT60S]);
+    wait("PT60S");
   } onEvent(stop_pl, stop) { |msg|
     exit;
   }
@@ -89,7 +89,7 @@ process ScopeEvent {
 process ScopeCompensate {
   msg_in = receive(my_pl, start_op);
   scope {
-    wait([PT60S]);
+    wait("PT60S");
   } compensation {
     invoke(pl, op, msg);
   }
@@ -102,8 +102,8 @@ process ScopeCompensate {
 process ScopeAll {
   msg_in = receive(my_pl, start_op);
   scope {
-    wait([PT60S]);
-  } onAlarm([PT60S]) {
+    wait("PT60S");
+  } onAlarm("PT60S") {
     exit;
   } onEvent(stop_pl, stop) { |msg|
     exit;
@@ -119,8 +119,8 @@ process ScopeAll {
 process ScopeAll {
   msg_in = receive(my_pl, start_op);
   scope
-    wait([PT60S]);
-  onAlarm([PT60S])
+    wait("PT60S");
+  onAlarm("PT60S")
     exit;
   compensation
     invoke(pl, op, msg);
@@ -285,58 +285,25 @@ process CompactFlow {
 }
 
 #=============================================================
-# Flow with signals
-#
-
-process BasicFlow {
-  orderMsg = receive(my_pl, start_op);
-  parallel {
-    invoke(partner1_pl, partner1_op, orderMsg);
-    signal(branch1);
-  } and {
-    invoke(partner2_pl, partner2_op, orderMsg);
-    signal(branch2);
-  } and {
-    join(branch1, branch2, [$branch1 and $branch2]);
-    invoke(partner_done_pl, partner_done_op, orderMsg);
-  }
-}
-
-#=============================================================
-# Naming Conflicts
-#
-
-process SimilarNames {
-  try {
-    parallel {
-      receive_var = receive(receive_pl, receive_op);
-      signal(signal-done, [$foo > 1]);
-    }
-  } catch(catchns::Catch) { |catch_var|
-    invoke(invoke_pl, invoke_op, catch_var);
-  }
-}
-
-#=============================================================
 # Different condition combinations
 #
 
 process ConditionsCombo {
   receive(my_pl, start_op) { |msg_in|
     if (msg_in.foo) {
-      wait([PT1S]);
+      wait("PT1S");
     } else if (msg_in.bar) {
-      wait([PT1S]);
+      wait("PT1S");
     } else {
-      wait([PT1S]);
+      wait("PT1S");
     }
 
     if (msg_in.baz) {
-      wait([PT1S]);
+      wait("PT1S");
     }
 
-    if (msg_in.baz) wait([PT1S]);
-    else wait([PT1S]);
+    if (msg_in.baz) wait("PT1S");
+    else wait("PT1S");
 
     reply(msg_in);
   }
