@@ -326,5 +326,6 @@ process WithTest {
 #
 
 process WithTest {
-  foo = <foo>{ bar.baz[2] + 4}</foo>;
+  m = 0;
+  foo = <foo>{ bar.baz[m] + 4}</foo>;
 }

@@ -381,7 +381,7 @@ returns [String qid]
 
 predicate
 returns [String pred]
-    : ^(PRED p=(INT | STRING)) { pred = p.getText(); };
+    : ^(PRED e=(expr)) { pred = deepText($e); };
 
 s_expr	:	^('==' s_expr s_expr) 
 	|	^('!=' s_expr s_expr) 

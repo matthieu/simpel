@@ -329,10 +329,7 @@ atom	:	path_expr | INT | '(' s_expr ')' -> s_expr | funct_call;
 path_expr
 	:	pelmt+=ns_id ('.' pelmt+=ns_id)* predicate? -> ^(PATH $pelmt+);
 predicate
-    : L_SQUARE (
-         INT -> ^(PRED INT)
-       | STRING -> ^(PRED STRING)
-       ) R_SQUARE;
+    : L_SQUARE expr R_SQUARE -> ^(PRED expr);
 
 ns_id	:	(pr=ID '::')? loc=ID ('(' ')')? -> ^(NS $pr? $loc);
 
