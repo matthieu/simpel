@@ -107,10 +107,12 @@ scope Parent;
 		proc_stmt+);
 param_block
 scope Parent;
-	:	^(SEQUENCE ID+
+	:	^(SEQUENCE ids+=ID+
 		{ OBuilder.StructuredActivity seq = builder.build($ID, OSequence.class, $BPELScope::oscope, $Parent[-1]::activity);
 		  $Parent::activity = seq;
-		  builder.setBlockParam($BPELScope::oscope, (OSequence)seq.getOActivity(), $ID.text); 
+          for (Object c : $ids) {
+              builder.setBlockParam($BPELScope::oscope, (OSequence)seq.getOActivity(), ((Tree)c).getText());
+          }
 		}
 		proc_stmt+);
 body	:	block | proc_stmt;
@@ -192,7 +194,7 @@ scope ReceiveBlock, Parent;
             $ReceiveBlock::activity = (OComm) on.getOActivity();
             $Parent::activity = on;
         }
-        body);
+        param_block);
 onrec
 scope ReceiveBlock, Parent;
     :	^(ONRECEIVE ID {
@@ -201,7 +203,7 @@ scope ReceiveBlock, Parent;
             $ReceiveBlock::activity = (OComm) on.getOActivity();
             $Parent::activity = on;
         }
-        body);
+        param_block);
 onupd
 scope ReceiveBlock, Parent;
     :	^(ONUPDATE ID {
@@ -210,7 +212,7 @@ scope ReceiveBlock, Parent;
             $ReceiveBlock::activity = (OComm) on.getOActivity();
             $Parent::activity = on;
         }
-        body);
+        param_block);
 compensation
 	:	^(COMPENSATION body);
 

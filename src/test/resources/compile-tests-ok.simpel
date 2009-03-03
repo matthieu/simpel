@@ -329,3 +329,19 @@ process WithTest {
   m = 0;
   foo = <foo>{ bar.baz[m] + 4}</foo>;
 }
+
+#=============================================================
+# OnUpdate with parameters
+#
+
+process ScopeAll {
+  res = resource("/foo");
+  msg_in = receive(res);
+  resp = resource("/foo/{p}");
+  scope {
+    wait("PT60S");
+  } onUpdate(resp) { |msg,p|
+    exit;
+  }
+}
+

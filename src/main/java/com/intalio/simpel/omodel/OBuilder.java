@@ -346,29 +346,39 @@ public class OBuilder extends BaseCompiler {
         // The AST for block activities is something like:
         //    (SEQUENCE (activity) (SEQUENCE varIds otherActivities))
         // The blockActivity here is the second sequence so we just set the varIds on the previous activity
+        // in the parent sequence
+
         if (blockActivity == null) {
             __log.warn("Can't set block parameter with block parent activity " + blockActivity);
             return;
         }
-        // TODO block params for on** activities in scopes
-        if (blockActivity.getParent() instanceof OScope) return;
 
-        List<OActivity> parentList = ((OSequence)blockActivity.getParent()).sequence;
-        OActivity oact = parentList.get(parentList.indexOf(blockActivity) - 1);
-        if (oact instanceof OPickReceive) {
-            OPickReceive.OnMessage rec = ((OPickReceive)oact).onMessages.get(0);
-            rec.variable = resolveVariable(oscope, varName, rec.operation != null ? rec.operation.getName() : null, true);
-            if (rec.matchCorrelation != null) {
-                // Setting the message variable type associated with the correlation expression
-                for (PropertyExtractor extractor : rec.matchCorrelation.getExtractors()) {
-                    ((SimPELExpr)extractor).getReferencedVariable(extractor.getMessageVariableName()).type = rec.variable.type;
+        // TODO block params for on** activities in scopes
+        if (blockActivity.getParent() instanceof OScope) {
+            OEventHandler.OEvent event = (OEventHandler.OEvent)blockActivity.getParent();
+            if (event.variable == null) event.variable = resolveVariable(oscope, varName, null, true);
+            else resolveVariable(oscope, varName, null, true);
+        } else if (blockActivity.getParent() instanceof OSequence) {
+            List<OActivity> parentList = ((OSequence)blockActivity.getParent()).sequence;
+            OActivity oact = parentList.get(parentList.indexOf(blockActivity) - 1);
+            if (oact instanceof OPickReceive) {
+                OPickReceive.OnMessage rec = ((OPickReceive)oact).onMessages.get(0);
+                rec.variable = resolveVariable(oscope, varName, rec.operation != null ? rec.operation.getName() : null, true);
+                if (rec.matchCorrelation != null) {
+                    // Setting the message variable type associated with the correlation expression
+                    for (PropertyExtractor extractor : rec.matchCorrelation.getExtractors()) {
+                        ((SimPELExpr)extractor).getReferencedVariable(extractor.getMessageVariableName()).type = rec.variable.type;
+                    }
                 }
-            }
-        } else if (oact instanceof OInvoke) {
-            OInvoke inv = (OInvoke)oact;
-            inv.outputVar = resolveVariable(oscope, varName, inv.operation != null ? inv.operation.getName() : null, false);
-            buildPartnerLink(oscope, inv.partnerLink.name, inv.operation != null ? inv.operation.getName() : null, false, false);
-        } else __log.warn("Can't set block parameter on activity " + oact);
+            } else if (oact instanceof OInvoke) {
+                OInvoke inv = (OInvoke)oact;
+                inv.outputVar = resolveVariable(oscope, varName, inv.operation != null ? inv.operation.getName() : null, false);
+                buildPartnerLink(oscope, inv.partnerLink.name, inv.operation != null ? inv.operation.getName() : null, false, false);
+            } else __log.warn("Can't set block parameter on activity " + oact);
+        } else {
+            __log.warn("Don't know anything about block activity " + blockActivity);
+        }
+
     }
 
     public void addExprVariable(OScope oscope, SimPELExpr expr, String varName) {

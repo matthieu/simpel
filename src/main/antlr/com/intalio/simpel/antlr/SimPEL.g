@@ -204,15 +204,15 @@ onalarm
 onquery
 @init { paraphrases.push("in an onQuery"); }
 @after { paraphrases.pop(); }
-        :	'onQuery' '(' r=ID ')' body -> ^(ONQUERY $r body);
+        :	'onQuery' '(' r=ID ')' param_block -> ^(ONQUERY $r param_block);
 onrec
 @init { paraphrases.push("in an onReceive"); }
 @after { paraphrases.pop(); }
-        :	'onReceive' '(' r=ID ')' body -> ^(ONRECEIVE $r body);
+        :	'onReceive' '(' r=ID ')' param_block -> ^(ONRECEIVE $r param_block);
 onupd
 @init { paraphrases.push("in an onUpdate"); }
 @after { paraphrases.pop(); }
-        :	'onUpdate' '(' r=ID ')' body -> ^(ONUPDATE $r body);
+        :	'onUpdate' '(' r=ID ')' param_block -> ^(ONUPDATE $r param_block);
 
 compensation
 @init { paraphrases.push("in an compensation"); }
