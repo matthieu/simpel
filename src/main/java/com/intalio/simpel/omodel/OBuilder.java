@@ -263,7 +263,7 @@ public class OBuilder extends BaseCompiler {
         invoke.resource.setDeclaringScope(oscope);
         if (outgoingMsg != null)
             invoke.inputVar = resolveVariable(oscope, outgoingMsg, null, true);
-        if (responseMsg != null)
+        if (responseMsg != null && responseMsg.getLValue() != null)
             invoke.outputVar = resolveVariable(oscope, responseMsg.getLValue(), null, false);
 
         return new SimpleActivity<OInvoke>(invoke);
