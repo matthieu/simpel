@@ -100,10 +100,11 @@ public class E4XExprRuntime implements ExpressionLanguageRuntime {
             // Setting variables runtime type
             if (res instanceof String) varType.underlyingType = OVarType.STRING_TYPE;
             if (res instanceof Number) varType.underlyingType = OVarType.NUMBER_TYPE;
+            if (res instanceof Boolean) varType.underlyingType = OVarType.BOOLEAN_TYPE;
         }
 
         ArrayList<Node> resList = new ArrayList<Node>(1);
-        if (res instanceof String || res instanceof Number) {
+        if (res instanceof String || res instanceof Number || res instanceof Boolean) {
             Document doc = DOMUtils.newDocument();
             resList.add(doc.createTextNode(res.toString()));
         } else if (res instanceof XMLObject) {
@@ -199,12 +200,14 @@ public class E4XExprRuntime implements ExpressionLanguageRuntime {
                     if (v.type.underlyingType == OVarType.SCHEMA_TYPE || v.type.underlyingType == OVarType.STRING_TYPE)
                         return rawValue;
                     if (v.type.underlyingType == OVarType.NUMBER_TYPE) return Double.valueOf(rawValue);
+                    if (v.type.underlyingType == OVarType.BOOLEAN_TYPE) return Boolean.valueOf(rawValue);
                 } else if (node.getNodeType() == Node.ELEMENT_NODE) {
                     Element nodeElmt = (Element) node;
                     if (DOMUtils.getFirstChildElement(nodeElmt) == null) {
                         String rawValue = nodeElmt.getTextContent();
                         if (v.type.underlyingType == OVarType.NUMBER_TYPE) return Double.valueOf(rawValue);
-                        else return rawValue;
+                        if (v.type.underlyingType == OVarType.BOOLEAN_TYPE) return Boolean.valueOf(rawValue);
+                        return rawValue;
                     }
                     else {
                         Element child = DOMUtils.getFirstChildElement((Element)node);
