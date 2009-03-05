@@ -281,7 +281,7 @@ public class E4XExprRuntime implements ExpressionLanguageRuntime {
         if (oexpr.getOwner().globalState != null) {
             parentScope = globalStateCache.get(oexpr.getOwner().getGuid());
             if (parentScope == null) {
-                Scriptable sharedScope = cx.initStandardObjects();
+                Scriptable sharedScope = new JSTopLevel(cx, "."); // TODO set the current path location for load
                 try {
                     ObjectInputStream in = new ScriptableInputStream(new ByteArrayInputStream(oexpr.getOwner().globalState), sharedScope);
                     parentScope = (Scriptable) in.readObject();
@@ -292,7 +292,7 @@ public class E4XExprRuntime implements ExpressionLanguageRuntime {
                 globalStateCache.put(oexpr.getOwner().getGuid(), parentScope);
             }
         } else {
-            parentScope = cx.initStandardObjects();
+            parentScope = new JSTopLevel(cx, ".");  // TODO set the current path location for load
         }
         return parentScope;
     }
