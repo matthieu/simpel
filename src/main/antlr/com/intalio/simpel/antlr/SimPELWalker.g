@@ -194,7 +194,7 @@ scope ReceiveBlock, Parent;
             $ReceiveBlock::activity = (OComm) on.getOActivity();
             $Parent::activity = on;
         }
-        param_block);
+        (block | param_block));
 onrec
 scope ReceiveBlock, Parent;
     :	^(ONRECEIVE ID {
@@ -203,7 +203,7 @@ scope ReceiveBlock, Parent;
             $ReceiveBlock::activity = (OComm) on.getOActivity();
             $Parent::activity = on;
         }
-        param_block);
+        (block | param_block));
 onupd
 scope ReceiveBlock, Parent;
     :	^(ONUPDATE ID {
@@ -212,7 +212,7 @@ scope ReceiveBlock, Parent;
             $ReceiveBlock::activity = (OComm) on.getOActivity();
             $Parent::activity = on;
         }
-        param_block);
+        (block | param_block));
 compensation
 	:	^(COMPENSATION body);
 
