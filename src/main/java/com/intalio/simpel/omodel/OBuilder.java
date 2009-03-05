@@ -14,6 +14,7 @@ import com.intalio.simpel.wsdl.SimPELPortType;
 import com.intalio.simpel.CompilationException;
 import com.intalio.simpel.ErrorListener;
 import org.apache.ode.utils.GUID;
+import org.apache.ode.utils.Namespaces;
 import com.intalio.simpel.Descriptor;
 import org.antlr.runtime.tree.Tree;
 
@@ -353,11 +354,10 @@ public class OBuilder extends BaseCompiler {
             return;
         }
 
-        // TODO block params for on** activities in scopes
-        if (blockActivity.getParent() instanceof OScope) {
+        if (blockActivity.getParent() instanceof OEventHandler.OEvent) {
             OEventHandler.OEvent event = (OEventHandler.OEvent)blockActivity.getParent();
             if (event.variable == null) event.variable = resolveVariable(oscope, varName, null, true);
-            else resolveVariable(oscope, varName, null, true);
+            else resolveSimpleVariable(oscope, varName); // Variables bound to url parameters
         } else if (blockActivity.getParent() instanceof OSequence) {
             List<OActivity> parentList = ((OSequence)blockActivity.getParent()).sequence;
             OActivity oact = parentList.get(parentList.indexOf(blockActivity) - 1);
@@ -552,6 +552,21 @@ public class OBuilder extends BaseCompiler {
             varType.parts.clear();
             varType.parts.put(part.name, part);
             typedVariables.add(name);
+        }
+        return resolved;
+    }
+
+    private OScope.Variable resolveSimpleVariable(OScope oscope, String name) {
+        OScope.Variable resolved = variables.get(name);
+        if (resolved == null) {
+            OXsdTypeVarType xst = new OXsdTypeVarType(_oprocess);
+            xst.simple = true;
+            xst.xsdType = new QName(Namespaces.XML_SCHEMA, "string");
+            resolved = new OScope.Variable(_oprocess, xst);
+            resolved.name = name;
+            resolved.declaringScope = oscope;
+            oscope.addLocalVariable(resolved);
+            variables.put(name, resolved);
         }
         return resolved;
     }
