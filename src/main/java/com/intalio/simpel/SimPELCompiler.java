@@ -13,11 +13,11 @@ import com.intalio.simpel.antlr.SimPELWalker;
 import com.intalio.simpel.util.DefaultErrorListener;
 import com.intalio.simpel.util.E4XExprParserHelper;
 import com.intalio.simpel.omodel.OBuilder;
+import com.intalio.simpel.expr.JSTopLevel;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.NativeObject;
 import org.mozilla.javascript.serialize.ScriptableOutputStream;
-import org.mozilla.javascript.serialize.ScriptableInputStream;
 import uk.co.badgersinfoil.e4x.antlr.*;
 import uk.co.badgersinfoil.e4x.E4XHelper;
 
@@ -82,14 +82,14 @@ public class SimPELCompiler {
     private byte[] buildGlobalState(File f, String header, Descriptor desc) {
         Context cx = Context.enter();
         cx.setOptimizationLevel(-1);
-        Scriptable sharedScope = cx.initStandardObjects();
+        Scriptable sharedScope = new JSTopLevel(cx, f == null ? "." : f.getParentFile().getAbsolutePath());
 
         Scriptable newScope = cx.newObject(sharedScope);
         newScope.setPrototype(sharedScope);
         newScope.setParentScope(null);
 
         // Setting some globals part of the environment in which processes execute
-        cx.evaluateString(newScope, MessageFormat.format(GLOBALS, f == null ? "." : f.getParentFile().getAbsolutePath()), "<cmd>", 1, null);
+        Object g = cx.evaluateString(newScope, MessageFormat.format(GLOBALS, f == null ? "." : f.getParentFile().getAbsolutePath()), "<cmd>", 1, null);
         try {
             cx.evaluateString(newScope, header, f == null ? "." : f.getAbsolutePath(), 1, null);
         } catch (Exception e) {
@@ -113,17 +113,7 @@ public class SimPELCompiler {
         return baos.toByteArray();
     }
 
-    private static final String GLOBALS =
-            "var processConfig = '{}'; \n" +
-
-            "function load(f) '{' \n" +
-            "    var cnt = \"\"; \n" +
-            "    var l = \"\"; \n" +
-            "    var r = new java.io.BufferedReader(new java.io.FileReader(\"{0}/\" + f)); \n" +
-            "    while ((l = r.readLine()) != null) cnt = cnt + l + \"\\n\"; \n" +
-            "    r.close(); \n" +
-            "    return eval(cnt); \n" +
-            "'}'";
+    private static final String GLOBALS = "var processConfig = '{}'; \n";
 
     private OProcess buildModel(String processDef, Descriptor desc) {
         ANTLRReaderStream charstream = null;
