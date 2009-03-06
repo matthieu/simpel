@@ -14,7 +14,6 @@ import org.mozilla.javascript.Delegator;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.serialize.ScriptableInputStream;
 import org.mozilla.javascript.xmlimpl.XMLLibImpl;
-import org.mozilla.javascript.xml.XMLLib;
 import org.mozilla.javascript.xml.XMLObject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -34,7 +33,7 @@ public class E4XExprRuntime implements ExpressionLanguageRuntime {
 
     private static final Logger __log = Logger.getLogger("com.intalio.simpel.expr");
     
-    private static ConcurrentHashMap<String, Scriptable> globalStateCache = new ConcurrentHashMap<String, Scriptable>();
+    private static ConcurrentHashMap<Long, Scriptable> globalStateCache = new ConcurrentHashMap<Long, Scriptable>();
 
     public void initialize(Map map) throws ConfigurationException {
     }
@@ -43,7 +42,7 @@ public class E4XExprRuntime implements ExpressionLanguageRuntime {
         Context cx = ContextFactory.getGlobal().enterContext();
         cx.setOptimizationLevel(-1);
 
-        Scriptable parentScope = getScope(cx, oexpr);
+        Scriptable parentScope = getScope(evaluationContext.getProcessId(), cx, oexpr);
         ODEDelegator scope = new ODEDelegator(parentScope, evaluationContext, (SimPELExpr)oexpr, cx);
 
         // First evaluating the assignment
@@ -58,7 +57,7 @@ public class E4XExprRuntime implements ExpressionLanguageRuntime {
         Context cx = ContextFactory.getGlobal().enterContext();
         cx.setOptimizationLevel(-1);
 
-        Scriptable parentScope = getScope(cx, oexpr);
+        Scriptable parentScope = getScope(evaluationContext.getProcessId(), cx, oexpr);
         ODEDelegator scope = new ODEDelegator(parentScope, evaluationContext, (SimPELExpr)oexpr, cx);
 
         // First evaluating the assignment
@@ -78,7 +77,7 @@ public class E4XExprRuntime implements ExpressionLanguageRuntime {
         Context cx = ContextFactory.getGlobal().enterContext();
         cx.setOptimizationLevel(-1);
 
-        Scriptable parentScope = getScope(cx, oexpr);
+        Scriptable parentScope = getScope(evaluationContext.getProcessId(), cx, oexpr);
         ODEDelegator scope = new ODEDelegator(parentScope, evaluationContext, (SimPELExpr)oexpr, cx);
 
         // First evaluating the assignment
@@ -156,7 +155,6 @@ public class E4XExprRuntime implements ExpressionLanguageRuntime {
 
     private class ODEDelegator extends Delegator  {
         private EvaluationContext _evaluationContext;
-        private XMLLib _xmlLib;
         private SimPELExpr _expr;
         private Context _cx;
         private HashMap<String,Object> _env = new HashMap<String,Object>();
@@ -169,10 +167,6 @@ public class E4XExprRuntime implements ExpressionLanguageRuntime {
             _expr = expr;
             _cx = cx;
             _parentScope = obj;
-        }
-
-        public void setXmlLib(XMLLib _xmlLib) {
-            this._xmlLib = _xmlLib;
         }
 
         public Object get(String name, Scriptable start) {
@@ -276,10 +270,10 @@ public class E4XExprRuntime implements ExpressionLanguageRuntime {
         }
     }
 
-    public Scriptable getScope(Context cx, OExpression oexpr) {
-        Scriptable parentScope;
+    public Scriptable getScope(Long pid, Context cx, OExpression oexpr) {
+        Scriptable parentScope = null;
         if (oexpr.getOwner().globalState != null) {
-            parentScope = globalStateCache.get(oexpr.getOwner().getGuid());
+            if (pid != null) parentScope = globalStateCache.get(pid);
             if (parentScope == null) {
                 Scriptable sharedScope = new JSTopLevel(cx, "."); // TODO set the current path location for load
                 try {
@@ -289,7 +283,7 @@ public class E4XExprRuntime implements ExpressionLanguageRuntime {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                globalStateCache.put(oexpr.getOwner().getGuid(), parentScope);
+                if (pid != null) globalStateCache.put(pid, parentScope);
             }
         } else {
             parentScope = new JSTopLevel(cx, ".");  // TODO set the current path location for load
