@@ -120,7 +120,7 @@ proc_stmt
 @after { paraphrases.pop(); }
 	:	pick | flow | if_ex | while_ex | until_ex | foreach | forall | try_ex | scope_ex | with_ex
 		| receive | request | invoke | ((reply | assign | throw_ex | wait_ex | exit | signal | join
-		| variables | partner_link) SEMI!);
+		| variables | partner_link | funct_call) SEMI!);
 
 block
 @init { paraphrases.push("in a block of statements"); }

@@ -345,3 +345,10 @@ process ScopeAll {
   }
 }
 
+#=============================================================
+# Simple Function Call
+#
+
+process SimpleFunctionCall {
+  foo(a,b,c);
+}

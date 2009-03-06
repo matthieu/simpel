@@ -97,7 +97,7 @@ scope BPELScope, Parent;
 proc_stmt
 	:	pick | flow | if_ex | while_ex | until_ex | foreach | forall | try_ex | scope_ex | with_ex
 		| invoke | receive | request | reply | assign | throw_ex | wait_ex | exit | signal | join
-		| variable | partner_link;
+		| variable | partner_link | funct_call;
 block
 scope Parent;
 	:	^(SEQUENCE 
@@ -363,7 +363,35 @@ xmlMarkup
 expr	:	s_expr;
 
 funct_call
-	:	^(CALL ID expr*);
+@init { boolean inAssign = true; ArrayList exprs = new ArrayList(); }
+	:	^(CALL {
+	        if (ExprContext_stack.size() == 0) {
+	            inAssign = false;
+                ExprContext_stack.push(new ExprContext_scope());	            
+	            $ExprContext::expr = new SimPELExpr(builder.getProcess());
+	        }
+	    }
+	    ID (e=(expr) { exprs.add($e); })* {
+	        if (!inAssign) {
+	            // Writing this, I feel dirty. But BPEL assignment forced me to. A simple function call needs to be
+	            // wrapped in an assignment, but assignment requires the rvalue to return something. So it's wrapped
+	            // in an anonymous function that delegates the call and then returns an empty element.
+	            StringBuffer fcall = new StringBuffer("(function() {");
+	            fcall.append($ID.getText()).append("(");
+                for (Object c : exprs) {
+                    fcall.append(deepText((Tree)c)).append(",");
+                }
+
+	            $ExprContext::expr.setExpr(fcall.toString().substring(0, fcall.toString().length() -1)
+	                + "); return <empty/>; } )()");
+                OBuilder.StructuredActivity<OAssign> assign =
+                    builder.build($ID, OAssign.class, $BPELScope::oscope, $Parent::activity, $ExprContext::expr);
+                // The long, winding road of abstraction
+                $ExprContext::expr = (SimPELExpr) ((OAssign.Expression)((OAssign.Copy)assign.
+                    getOActivity().operations.get(0)).from).expression;
+                ExprContext_stack.pop();
+	        }
+	    } );
 path_expr
 	:	^(PATH {
 	        StringBuffer buff = new StringBuffer();

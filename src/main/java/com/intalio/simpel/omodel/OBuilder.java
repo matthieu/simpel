@@ -295,7 +295,7 @@ public class OBuilder extends BaseCompiler {
         oassign.operations.add(ocopy);
 
         OAssign.VariableRef vref = new OAssign.VariableRef(_oprocess);
-        String lvar = rexpr.getLValue().split("\\.")[0];
+        String lvar = rexpr.getLValue() == null ? new GUID().toString() : rexpr.getLValue().split("\\.")[0];
         vref.variable = resolveVariable(oscope, lvar);
         // Don't worry, it's all type safe, therefore it's correct
         if (vref.variable.type instanceof OMessageVarType)
