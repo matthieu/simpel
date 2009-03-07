@@ -356,7 +356,8 @@ public class OBuilder extends BaseCompiler {
 
         if (blockActivity.getParent() instanceof OEventHandler.OEvent) {
             OEventHandler.OEvent event = (OEventHandler.OEvent)blockActivity.getParent();
-            if (event.variable == null) event.variable = resolveVariable(oscope, varName, null, true);
+            if (event.variable == null && !event.getResource().getMethod().equalsIgnoreCase("GET"))
+                event.variable = resolveVariable(oscope, varName, null, true);
             else resolveSimpleVariable(oscope, varName); // Variables bound to url parameters
         } else if (blockActivity.getParent() instanceof OSequence) {
             List<OActivity> parentList = ((OSequence)blockActivity.getParent()).sequence;
