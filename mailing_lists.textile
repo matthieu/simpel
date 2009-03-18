@@ -1,0 +1,10 @@
+---
+layout: default
+title: Mailing Lists
+---
+
+For now SimPEL has a single mailing list mostly targeted at users. It's actually a Google Group, to subscribe and search just visit: 
+
+"http://groups.google.com/group/simpel":http://groups.google.com/group/simpel.
+
+And remember, no "trolling":http://en.wikipedia.org/wiki/Internet_troll, no "bikeshed":http://bikeshed.com/ ;)

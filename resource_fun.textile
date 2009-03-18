@@ -1,0 +1,6 @@
+---
+layout: default
+title: Resource Fun
+---
+
+This tutorial needs to be written, Shakespeare has been contacted.
