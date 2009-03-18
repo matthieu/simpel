@@ -1,0 +1,6 @@
+---
+layout: default
+title: Download SimPEL
+---
+
+SimPEL hasn't been released yet, it's still to early. But it's coming really soon so "stay tuned":http://oss.intalio.com/blog/ and in the meantime you can still build it from "sources":http://github.com/intalio/simpel.
