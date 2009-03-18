@@ -1,0 +1,10 @@
+---
+layout: default
+title: Welcome
+---
+
+h2(#what_is_simple).  What is SimPEL?
+
+SimPEL stands for Simple Process Execution Language. It allows you to write long-living
+processes in a snap. It's easy on the eyes, feels like a scripting language and knows a few
+things about REST.

@@ -1,0 +1,92 @@
+<html>
+  <head>
+    <meta content='text/html;charset=UTF-8' http-equiv='Content-Type' />
+    <title>SimPEL &mdash; {{ page.title }}</title>
+    <style type='text/css'>
+      @import 'css/default.css';
+    </style>
+    <style media='print' type='text/css'>
+      @import 'css/print.css';
+    </style>
+    <meta content='Official SimPEL documentation from the people in the know' name='subject' />
+    <link href='/favicon.ico' rel='shortcut icon' />
+  </head>
+  <body>
+    <div id='header'>
+      <div id='logo'>
+        <a href='http://intalio.github.com/simpel'>
+          <img alt='buildr' src='images/intalio-oss.gif' />
+        </a>
+      </div>
+      
+      <div id="main-nav-wrapper">
+        <div class="main-nav-left"></div>
+        <div id="main-nav">
+          <ul>
+            <li class="first"><a title="Intalio|OSS" href="http://oss.intalio.com" id="nav-projects">Projects</a></li>
+            <li><a title="Source Repository" href="http://github.com/intalio/simpel" id="nav-github">Github</a></li>
+          </ul>
+          <div class='search'></div>
+        </div>
+        <div class="main-nav-right"></div>
+      </div>
+
+      <div id='wrap' class='center-round'>
+        <div class='center-content'/>
+          <div class='box-top'><span/></div>
+            <div id='pages'>
+              <ol class='toc'>
+                <li>Start Here
+                <ol class="toc">
+                  <li><a href='index.html'>Welcome</a></li>
+                  <li><a href='download.html'>Download</a></li>
+                  <li><a href='buildr.pdf'>User Guide (PDF)</a></li>
+                  <li><a href='whats_new.html'>What&#8217;s New</a></li>
+                  <li><a href='http://cwiki.apache.org/confluence/display/BUILDR/Index'>Community Wiki</a></li>
+                </ol>
+                </li>
+                <li>Using Buildr
+                <ol class="toc">
+                  <li><a href='getting_started.html'>Getting Started</a></li>
+                  <li><a href='projects.html'>Projects</a></li>
+                  <li><a href='building.html'>Building</a></li>
+                  <li><a href='artifacts.html'>Artifacts</a></li>
+                  <li><a href='packaging.html'>Packaging</a></li>
+                  <li><a href='testing.html'>Testing</a></li>
+                  <li><a href='settings_profiles.html'>Settings/Profiles</a></li>
+                  <li><a href='languages.html'>Languages</a></li>
+                  <li><a href='more_stuff.html'>More Stuff</a></li>
+                  <li><a href='extending.html'>Extending Buildr</a></li>
+                  <li><a href='recipes.html'>Recipes</a></li>
+                </ol>
+                </li>
+                <li>Reference
+                <ol  class="toc">
+                  <li><a href='rdoc'>API</a></li>
+                  <li><a href='http://docs.rubyrake.org'>Rake</a></li>
+                  <li><a href='http://antwrap.rubyforge.org'>Antwrap</a></li>
+                  <li><a href='troubleshooting.html'>Troubleshooting</a></li>
+                </ol>
+                </li>
+                <li>Get Involved
+                <ol  class="toc">
+                  <li><a href='mailing_lists.html'>Mailing Lists</a></li>
+                  <li><a href='http://issues.apache.org/jira/browse/Buildr'>Issues/Bugs</a></li>
+                  <li><a href='contributing.html'>Contributing</a></li>
+                  <li><a href='specs.html'>Specs</a></li>
+                  <li><a href='coverage/index.html'>Coverage</a></li>
+                </ol>
+                </li>
+              </ol>
+            </div>
+            <div id='content'>
+              <h1 id='{{ page.title | downcase | replace(' ', '_') }}'>{{ page.title }}</h1>
+              {{ content }}
+            </div>
+            <div id='footer'>Copyright &copy; 2008-2009 Intalio Inc.</div>
+            <div class='box-bottom'><span/></div>
+            </div>
+          </div>
+    </div>
+  </body>
+</html>

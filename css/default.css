@@ -1,18 +1,18 @@
 body {
-  background-color: #fff;
-  color: #000;
-  font-family: "DejaVu Sans", Verdana, Helvetica;
+  background-color: #F0EFEF;
+  color: #333333;
+  font-family: Arial, Helvetica, sans-serif;
   text-align: center;
   line-height: 150%;
-  font-size: 12pt;
+  font-size: 9.5pt;
 }
 
-a:link, a:visited{
-  color: #0044b3;
+a:link, a:visited {
+  color: #006BB7;
   text-decoration: none;
 }
 
-a:hover{
+a:hover {
   text-decoration: underline;
 }
 
@@ -27,10 +27,11 @@ pre, code {
 pre {
   margin: 0.3em 0 0.3em 0.9em;
   padding: 0;
-  line-height: 135%;
+  line-height: 1.8em;
   white-space: pre-wrap;       /* css-3 */
   white-space: -moz-pre-wrap !important;  /* Mozilla, since 1999 */
 }
+pre br { display: none; }
 
 h1, h2, h3 {
   padding: 0;
@@ -40,20 +41,20 @@ h1, h2, h3 {
 }
 
 h1 {
-  font-size: 2em;
+  font-size: 1.5em;
   margin-top: 0;
   padding-bottom: 0.3em;
   border-bottom: 1px solid #808080;
 }
 
 h2 {
-  font-size: 1.3em;
+  font-size: 1.0em;
   padding-bottom: 0.3em;
   border-bottom: 1px solid #a0a0a0;
 }
 
 h3 {
-  font-size: 1.1em;
+  font-size: 0.8em;
 }
 
 blockquote {
@@ -88,40 +89,70 @@ th, td {
 
 th, thead td {
   border-bottom: none;
-  background-color: #669966;
+  background-color: #006BB7;
   color: #ffffff;
   text-align: left;
 }
 
+.center-round {
+  background: #FFF url(../images/box-left.gif) repeat-y scroll left top;
+}
+.box-top {
+  background:transparent url(../images/box-top.gif) no-repeat scroll left top;
+  height:10px;
+  width:100%;
+}
+.box-top span {
+  background:transparent url(../images/box-top-right.gif) no-repeat scroll right top;
+  display:block;
+  height:10px;
+  position:relative;
+}
+.center-content {
+  background:transparent url(../images/box-right.gif) repeat-y scroll right top;
+  margin: 0;
+  padding: 0;
+  position:relative;
+}
+.box-bottom {
+  background: transparent url(../images/box-bottom.gif) no-repeat scroll left bottom;
+  height:10px;
+  margin-top: -1px;
+  width:100%;
+}
+.box-bottom span {
+  background: transparent url(../images/box-bottom-right.gif) no-repeat scroll right bottom;
+  display:block;
+  height:10px;
+  position:relative;
+}
 
 #wrap{
   margin: 1em auto 2em auto;
   text-align: left;
-  width: 65em;
+  width:943px;
+  background-color: #FFFFFF;
 }
-
 
 #header {
-  margin: 0 0 3em 18em;
+  text-align: left;
+  margin:0 auto 14px;
+  padding:0;
+  width:939px;
 }
-
-#header .tagline {
-  float: right;
-  font-size: 1.5em;
-  font-weight: bold;
-  position: relative;
-  bottom: 4.5em;
+#logo {
+  padding: 20px 0 8px 0;
 }
-
 
 #pages { /* Parent Wrapper for inside boxes */
 /*  display: inline; */ /* IE Hack */
-  width: 12em;
+  width: 11em;
   float: left;
   text-align: left;
   margin-right: 2em;
   font-family: "DejaVu Sans", Verdana, Helvetica;
-  font-size: 11pt;
+  font-size: 8pt;
+  font-weight: bold;
   text-align: right;
   border-right: 1px solid #ccc;
   padding-right: 2em;
@@ -133,7 +164,7 @@ th, thead td {
 }
 #pages ol li {
   padding: 0.3em 0 0.6em 0em;
-  color: #669966;
+  color: #333333;
   font-weight: bold; 
 }
 #pages ol li ol {
@@ -156,7 +187,9 @@ th, thead td {
 /*  display: inline; *//* IE Hack */
   float: right;
   width: 44em;
+  margin-top: 0.5em;
   margin-left: 0.3em;
+  margin-right: 1em;
   margin-bottom: 5em;
 }
 
@@ -200,7 +233,6 @@ ol.toc li ol.toc {
 #content .footnote-links dt:after { content: ": " }
 #content .footnote-links dd { }
 
-
 #footer {
   color: #888;
   border-top: 1px solid #ccc;
@@ -208,4 +240,75 @@ ol.toc li ol.toc {
   padding: 0.3em;
   margin: 2em 0 3em 0em;
   clear: both;
+}
+
+/* Top bar navigation */
+#main-nav-wrapper {
+  width:          939px;
+  height:         54px;
+  padding:        0;
+  margin:         0;
+  clear:          both;
+}
+.main-nav-left {
+  background:     #F0EFEF url(../images/nav-bg-left.gif) no-repeat 0 0;
+  height:         54px;
+  width:          9px;
+  float:          left;
+}
+.main-nav-right {
+  background:     #F0EFEF url(../images/nav-bg-right.gif) no-repeat 0 0;
+  height:         54px;
+  width:          8px;
+  float:          left;
+}
+#main-nav {
+  float:          left;
+  background:     transparent url(../images/nav-bg.gif) repeat-x 0 0;
+  width:          922px;
+  padding:        8px 0 1px;
+}
+#main-nav ul {
+  float:          left;
+  background:     transparent url(../images/nav-bg2-left.gif) no-repeat -2px top;
+  padding:        0;
+  margin:         0 0 10 0;
+}
+#main-nav ul li {
+  display:        block;
+  float:          left;
+  width:          89px;
+  height:         36px;
+  text-indent:    -50000px;
+  overflow:       hidden;
+}
+#main-nav .search {
+  background:     transparent url(../images/nav-bg2-right.gif) no-repeat right top;
+  float:          right;
+  padding:        6px 8px 30px 8px;
+}
+
+#main-nav .search form input {float: left;}
+#main-nav a#nav-projects,
+#main-nav a#nav-projects-sel,
+#main-nav a#nav-github,
+#main-nav a#nav-github-sel {
+  display:        block;
+  width:          89px;
+  height:         36px;
+}
+#main-nav a#nav-projects {
+  background:       url(../images/nav-projects.gif) no-repeat left top;
+}
+#main-nav a#nav-github {
+  background:       url(../images/nav-github.gif) no-repeat right top;
+}
+
+#main-nav a#nav-projects:hover,
+#main-nav a#nav-projects-sel {
+  background:       url(../images/nav-projects.gif) 0 -36px;
+}
+#main-nav a#nav-github:hover,
+#main-nav a#nav-github-sel {
+  background:       url(../images/nav-github.gif) 0 -36px;
 }
