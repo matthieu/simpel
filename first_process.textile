@@ -3,4 +3,137 @@ layout: default
 title: Your First Process
 ---
 
-This tutorial needs to be written, Shakespeare has been contacted.
+h2(#tools_trade). Tools of The Trade
+
+Before diving in the SimPEL code, let's study a bit the environment in which it's going to be running and which tools we're going to use. After downloading the "SimPEL runtime":download.html, called Simplex, and unzipping it to your directory of choice, you should obtain a directory structure containing _bin_, _lib_ and _samples_. Hopefully the names are reasonably self-explanatory. To start the runtime just do:
+
+{% highlight bash %}
+$ cd bin
+$ run
+2009-03-19 11:40:47.870::INFO:  Logging to STDERR via org.mortbay.log.StdErrLog
+2009-03-19 11:40:48.935::INFO:  jetty-6.1.11
+2009-03-19 11:40:48.969::INFO:  Started SocketConnector@0.0.0.0:3434
+Up and ready to serve.
+{% endhighlight %}
+
+And you're ready! For Linux or Mac users, you may need to _sh run_ instead of just run. After the first startup, 2 new directories have been created: _scripts_ and _work_. You shouldn't worry too much about _work_ but _scripts_ is where most of your work is going to happen.
+
+Now that you've started your server, you should see a welcome page under "http://localhost:3434":http://localhost:3434. There's some basic information there so feel free to browse around.
+
+Another thing you'll need to install (if you don't have it already) before we get started is "curl":http://curl.haxx.se/. It's a very simple command line HTTP client and we'll use it to run the processes. Why using curl instead of a web page or a Ruby script? It's the lowest common denominator, once you see how the calls are made with curl, you should be able to do the same whatever your environment is, simple or very complex. If you're running Max OS or Linux, chances are that curl is already installed. Otherwise the package name is simply _curl_. For Windows users it's an "easy download":http://curl.haxx.se/dlwiz/?type=bin&os=Win32&flav=-&ver=-.
+
+h2(#deployment). Deployment
+
+Your first process isn't going to be much of a process but we have to start somewhere and at least it's better than "Hello World!". So with Simplex started, open your favourite text editor, copy the following text in it and save it under the _scripts_ directory as idea-reminder.simpel (only the extension really matters).
+
+{% highlight javascript %}
+processConfig.address = "/reminder";
+
+process IdeaReminder {
+  idea = receive(self);
+  resp = <response>Idea saved at {self}.</response>;
+  reply(resp, self);
+
+  scope {
+    receive(self) { |req|
+      resp2 = <done/>;
+      reply(resp2);
+    }
+  } onQuery(self) {
+    reply(idea);
+  }
+}
+{% endhighlight %}
+
+After you save, you should see the following line appear in the runtime console:
+
+{% highlight bash %}
+Process IdeaReminder deployed successfully.
+{% endhighlight %}
+
+The runtime console provides all the compilation and runtime feedback concerning processes you deploy and run. It also auto-deploys every SimPEL file located under the _scripts_ directory. For example if you remove everything inside the process { ... } declaration and save again you will see something like:
+
+{% highlight bash %}
+2:0 At least one element is required at } in a block of statements
+Deployment aborted.
+{% endhighlight %}
+
+The error message gives you the line and column numbers where the error occured, the error itself and a higher level location hint ("in a block of statements").
+
+One last comment on process deployment: under _scripts_, you can have any directory structure. You can order your processes and projects a bit by giving each of them a directory, organize your files in sub-directories (we'll see that _scripts_ can contain more than just processes), etc.
+
+h2(#idea_reminder). An Idea Reminder
+
+Wow, that was a lot of information already and we haven't even looked at the process yet! So let's do that now. The first process we're going to study is an idea reminder. You start it by providing a brand new and bright idea and it remembers it for you. Later on you can query the process for the value and finally cancel the idea when it's not relevant anymore.
+
+While Simplex is still running and the Idea Reminder process is deployed, the process can be started with curl this way:
+
+{% highlight bash %}
+$ curl -v --data "<idea>Grow a mullet to postulate in the next MacGyver movie.</idea>" --request POST --header "Content-Type: application/xml" http://localhost:3434/reminder
+{% endhighlight %}
+
+This is a simple HTTP POST done at the address of the process. The content provided is a simple XML element which contains the idea text. As we're running curl in verbose mode, we'll see all the nitty gritty details of the HTTP invocation. Note that you don't really need to understand all this stuff but I think it's still nice to have a vague idea of what's being exchanged. So here's the output:
+
+{% highlight bash %}
+> POST /reminder HTTP/1.1
+> User-Agent: curl/7.18.2 (i486-pc-linux-gnu) libcurl/7.18.2 OpenSSL/0.9.8g zlib/1.2.3.3 libidn/1.8
+> Host: localhost:3434
+> Accept: */*
+> Content-Type: application/xml
+> Content-Length: 67
+> 
+< HTTP/1.1 201 Created
+< Content-Type: application/xml
+< Location: http://localhost:3434/reminder/2851
+< Transfer-Encoding: chunked
+< Server: Jetty(6.1.11)
+< 
+<?xml version="1.0" encoding="UTF-8"?>
+<response>Idea saved at /reminder/2851.</response>
+{% endhighlight %}
+
+
+
+h2(#process_syntax). The Process
+
+We're going to start with the header:
+
+{% highlight javascript %}
+processConfig.address = "/reminder";
+{% endhighlight %}
+
+Generally speaking, you can stick any valid Javascript code in the process header (more on that in later tutorials). Here we're using _processConfig_, a predefined variable that holds process configuration, to define the address under which the process will be available (http://localhost:3434/reminder). There are a few other things you can set on the process configuration, check the "configuration reference":configuration.html for more details.
+
+The process starts simply by receiving a request on its own resource. The _self_ resource is predefined and instantiates a new process instance on the first receive. It can be used subsequently as the process instance endpoint. You'll learn more about declaring resources in the "Resource Fun":resource-fun.html tutorial.
+
+{% highlight javascript %}
+process IdeaReminder {
+  idea = receive(self);
+  resp = <response>Idea saved at {self}.</response>;
+  reply(resp, self);
+  ...
+}
+{% endhighlight %}
+
+As should be obvious from the snippet above, XML is a native type and can be declared in-line in SimPEL. It actually relies on "E4X":https://developer.mozilla.org/en/E4X so most of the things that works with E4X will work in SimPEL. The brackets lets you escape the literal definition, here we include the resource value in the returned message. Finally, for each receive, a reply is needed. You need to give the reply content and the resource on which you're replying.
+
+
+{% highlight javascript %}
+processConfig.address = "/reminder";
+
+process IdeaReminder {
+  ...
+  scope {
+    receive(self) { |req|
+      resp2 = <done/>;
+      reply(resp2);
+    }
+  } onQuery(self) {
+    reply(idea);
+  }
+}
+{% endhighlight %}
+
+h2(#final_notes). Final Notes
+
+Syntax highlighting

@@ -1,0 +1,12 @@
+---
+layout: default
+title: Configuration Reference
+---
+
+h2(#process_config). Process Configuration
+
+A process can be configured by using the predefined processConfig variable, the following properties are used:
+
+ * _address_: a string containing the url under which the process definition should be deployed (ex: processConfig.address = "/foo";)
+
+ * _inMem_: a boolean defining whether the process should execute in memory or in the database, defaults to false (ex: processConfig.inMem = true;)
