@@ -5,7 +5,7 @@ title: Your First Process
 
 h2(#tools_trade). Tools of The Trade
 
-Before diving in the SimPEL code, let's study a bit the environment in which it's going to be running and which tools we're going to use. After downloading the "SimPEL runtime":download.html, called Simplex, and unzipping it to your directory of choice, you should obtain a directory structure containing _bin_, _lib_ and _samples_. Hopefully the names are reasonably self-explanatory. To start the runtime just do:
+Before diving in the SimPEL code, let's study a bit the environment in which it's going to run and the tools we'll use. After downloading the "SimPEL runtime":download.html, called Simplex, and unzipping it to your directory of choice, you should obtain a directory structure containing _bin_, _lib_ and _samples_. Hopefully the names are reasonably self-explanatory. To start the runtime just do:
 
 {% highlight bash %}
 $ cd bin
@@ -16,11 +16,11 @@ $ run
 Up and ready to serve.
 {% endhighlight %}
 
-And you're ready! For Linux or Mac users, you may need to _sh run_ instead of just run. After the first startup, 2 new directories have been created: _scripts_ and _work_. You shouldn't worry too much about _work_ but _scripts_ is where most of your work is going to happen.
+And you're ready! For Linux or Mac users, you may need to _sh run_ instead of just run. After the first startup, 2 new directories have been created: _scripts_ and _work_. You shouldn't worry too much about _work_ but _scripts_ is where most of your development is going to happen.
 
 Now that you've started your server, you should see a welcome page under "http://localhost:3434":http://localhost:3434. There's some basic information there so feel free to browse around.
 
-Another thing you'll need to install (if you don't have it already) before we get started is "curl":http://curl.haxx.se/. It's a very simple command line HTTP client and we'll use it to run the processes. Why using curl instead of a web page or a Ruby script? It's the lowest common denominator, once you see how the calls are made with curl, you should be able to do the same whatever your environment is, simple or very complex. If you're running Max OS or Linux, chances are that curl is already installed. Otherwise the package name is simply _curl_. For Windows users it's an "easy download":http://curl.haxx.se/dlwiz/?type=bin&os=Win32&flav=-&ver=-.
+Another thing you'll need to install (if you don't have it already) before we get started is "curl":http://curl.haxx.se/. It's a very simple command line HTTP client and we'll use it to run the processes. Why using curl instead of a web page or a Ruby script? It's the lowest common denominator, once you see how the calls are made with curl, you should be able to do the same whatever your environment is, simple or very complex. If you're running Max OS or Linux, chances are that curl is already installed. Otherwise the package name is just _curl_. For Windows users it's an "easy download":http://curl.haxx.se/dlwiz/?type=bin&os=Win32&flav=-&ver=-.
 
 h2(#deployment). Deployment
 
@@ -51,7 +51,7 @@ After you save, you should see the following line appear in the runtime console:
 Process IdeaReminder deployed successfully.
 {% endhighlight %}
 
-The runtime console provides all the compilation and runtime feedback concerning processes you deploy and run. It also auto-deploys every SimPEL file located under the _scripts_ directory. For example if you remove everything inside the process { ... } declaration and save again you will see something like:
+The runtime console provides all the compilation and runtime feedback concerning processes you deploy and run. It also auto-deploys every .simpel file located under the _scripts_ directory. For example if you remove everything inside the process { ... } declaration and save again you will see something like:
 
 {% highlight bash %}
 2:0 At least one element is required at } in a block of statements
@@ -69,7 +69,7 @@ Wow, that was a lot of information already and we haven't even looked at the pro
 While Simplex is still running and the Idea Reminder process is deployed, the process can be started with curl this way:
 
 {% highlight bash %}
-$ curl -v --data "<idea>Grow a mullet to postulate in the next MacGyver movie.</idea>" --request POST --header "Content-Type: application/xml" http://localhost:3434/reminder
+$ curl -v --data "<idea>Grow a mullet and postulate for the next MacGyver movie.</idea>" --request POST --header "Content-Type: application/xml" http://localhost:3434/reminder
 {% endhighlight %}
 
 This is a simple HTTP POST done at the address of the process. The content provided is a simple XML element which contains the idea text. As we're running curl in verbose mode, we'll see all the nitty gritty details of the HTTP invocation. Note that you don't really need to understand all this stuff but I think it's still nice to have a vague idea of what's being exchanged. So here's the output:
@@ -92,11 +92,42 @@ This is a simple HTTP POST done at the address of the process. The content provi
 <response>Idea saved at /reminder/2851.</response>
 {% endhighlight %}
 
+The important parts here are the _Location_ header returned and the response. With that first POST we've started a new instance of our Idea Reminder process. So we get a _Created_ response (status 201) with the _Location_ pointing to the address of that new instance. Subsequent calls to the instance will go to that address.
 
+Let's now query our idea and see if it's still there (don't forget to replace the id at the end of the url with the one you got in the previous response):
+
+{% highlight bash %}
+$ curl --request GET http://localhost:3434/reminder/2851
+{% endhighlight %}
+{% highlight xml %}
+<?xml version="1.0" encoding="UTF-8"?>
+<idea>Grow a mullet and postulate for the next MacGyver movie.</idea>
+{% endhighlight %}
+
+Here we've done a simple GET request at the address of the process instance. Pointing your browser to the GET address should produce the exact same result. Another interesting thing to notice is that if you restart the runtime, the idea will still respond to your requests. Even if it's not much of a process, it's already long-living.
+
+At this point we're almost done with our process, it will remember that idea until we tell it we're finally done:
+
+{% highlight bash %}
+$ curl --data "<close>Was a crappy idea.</close>" --request POST --header "Content-Type: application/xml" http://localhost:3434/reminder/2851
+{% endhighlight %}
+{% highlight xml %}
+<?xml version="1.0" encoding="UTF-8"?>
+<done/>
+{% endhighlight %}
+
+We simply POST at the process instance address to complete it. The process is finished and subsequent requests will tell you so:
+
+{% highlight bash %}
+$ curl --request GET http://localhost:3434/reminder/3551
+The resource isn t available anymore.
+{% endhighlight %}
+
+Even if we've been to a great length of detail so that you could see all the HTTP interactions happening, overall it's a very simple process. And as we're going to see, it's also very simple to define.
 
 h2(#process_syntax). The Process
 
-We're going to start with the header:
+There's no real suspense as you've already seen the entirety of the process definition in the "deployment":#deployment section. I'm going to explain its implementation now, starting with the header:
 
 {% highlight javascript %}
 processConfig.address = "/reminder";
@@ -104,7 +135,7 @@ processConfig.address = "/reminder";
 
 Generally speaking, you can stick any valid Javascript code in the process header (more on that in later tutorials). Here we're using _processConfig_, a predefined variable that holds process configuration, to define the address under which the process will be available (http://localhost:3434/reminder). There are a few other things you can set on the process configuration, check the "configuration reference":configuration.html for more details.
 
-The process starts simply by receiving a request on its own resource. The _self_ resource is predefined and instantiates a new process instance on the first receive. It can be used subsequently as the process instance endpoint. You'll learn more about declaring resources in the "Resource Fun":resource-fun.html tutorial.
+The process starts simply by receiving a POST request on its own resource as I've demonstrated "earlier":#idea_reminder. The _self_ resource is predefined and instantiates a new process instance on the first receive. It can be used subsequently as the process instance endpoint. You'll learn more about declaring resources in the "Resource Fun":resource-fun.html tutorial.
 
 {% highlight javascript %}
 process IdeaReminder {
@@ -117,10 +148,9 @@ process IdeaReminder {
 
 As should be obvious from the snippet above, XML is a native type and can be declared in-line in SimPEL. It actually relies on "E4X":https://developer.mozilla.org/en/E4X so most of the things that works with E4X will work in SimPEL. The brackets lets you escape the literal definition, here we include the resource value in the returned message. Finally, for each receive, a reply is needed. You need to give the reply content and the resource on which you're replying.
 
+The second part of the process handles the idea reminding and the completion:
 
 {% highlight javascript %}
-processConfig.address = "/reminder";
-
 process IdeaReminder {
   ...
   scope {
@@ -134,6 +164,18 @@ process IdeaReminder {
 }
 {% endhighlight %}
 
+You can think of a scope as a block of code that allows parrallel events to happen as long as it's active. It's actually a little more than that but it's a first good approximation.
+
+Here, the body of the scope is a _receive_, so we're going to wait for a POST on the _self_ resource. This is the completion request we mentioned at the end of the "Idea Reminder":#idea_reminder section that will cancel our idea.
+
+Now, because we have a scope, receive doesn't block other events, specifically the _onQuery_ that we have here. So it can happen in parrallel as long as the scope is active (as long as we don't receive the POST request on _self_). This is what allows us to query the idea. At the HTTP level, an _onQuery_ is a simple GET request done on the provided resource.
+
+And that's the end of our process. When the _receive_ is triggered, the scope exits and so do the _onQuery_ and the whole process execution. Pretty easy isn't it?
+
 h2(#final_notes). Final Notes
 
-Syntax highlighting
+In this first tutorial, you've learnt a lot about the environment in which processes execute and how SimPEL leverages HTTP for all its communications. You've also been introduced to a few important constructs of the SimPEL language and seen how a short process can be composed.
+
+It's important to notice how easy it can be to build a web service this way. In just a few lines you have a very basic but complete web service. As you will see, SimPEL excels at gluing web services together and building higher level services from them.
+
+When you edit your SimPEL processes, the lack of syntax highlighting can be a problem. We have a few "syntax files":http://github.com/intalio/simpel/tree/master/tools available that might help but if you can't find one for your favorite editor, contributions are definitely welcome! Join us on the "mailing list":mailing_lists.html.
