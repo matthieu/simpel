@@ -1,6 +1,7 @@
 package com.intalio.simpel;
 
 import org.apache.ode.bpel.rtrep.v2.OProcess;
+import org.apache.ode.bpel.rapi.ProcessModel;
 
 import org.antlr.runtime.ANTLRReaderStream;
 import org.antlr.runtime.RecognitionException;
@@ -17,7 +18,9 @@ import com.intalio.simpel.expr.JSTopLevel;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.NativeObject;
+import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.serialize.ScriptableOutputStream;
+import org.mozilla.javascript.serialize.ScriptableInputStream;
 import uk.co.badgersinfoil.e4x.antlr.*;
 import uk.co.badgersinfoil.e4x.E4XHelper;
 
@@ -79,6 +82,25 @@ public class SimPELCompiler {
         return model;
     }
 
+    public Descriptor rebuildDescriptor(ProcessModel pmodel) {
+        if (pmodel.getGlobalState() == null) return new Descriptor();
+
+        Context cx = ContextFactory.getGlobal().enterContext();
+        Scriptable sharedScope = new JSTopLevel(cx, ".");
+        try {
+            ObjectInputStream in = new ScriptableInputStream(new ByteArrayInputStream(pmodel.getGlobalState()), sharedScope);
+            Scriptable parentScope = (Scriptable) in.readObject();
+            in.close();
+
+            NativeObject pconfig = (NativeObject) cx.evaluateString(parentScope, "processConfig;", "<cmd>", 1, null);
+            Descriptor desc = new Descriptor();
+            desc.importConf(pconfig);
+            return desc;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to restore process global state, it seems corrupted.");
+        }
+    }
+
     private byte[] buildGlobalState(File f, String header, Descriptor desc) {
         Context cx = Context.enter();
         cx.setOptimizationLevel(-1);
@@ -89,16 +111,16 @@ public class SimPELCompiler {
         newScope.setParentScope(null);
 
         // Setting some globals part of the environment in which processes execute
-        Object g = cx.evaluateString(newScope, MessageFormat.format(GLOBALS, f == null ? "." : f.getParentFile().getAbsolutePath()), "<cmd>", 1, null);
+        cx.evaluateString(newScope, MessageFormat.format(GLOBALS,
+                f == null ? "." : f.getParentFile().getAbsolutePath()), "<cmd>", 1, null);
         try {
             cx.evaluateString(newScope, header, f == null ? "." : f.getAbsolutePath(), 1, null);
         } catch (Exception e) {
             fatalCompilationError("Error when interpreting definitions in the process header: " + e.toString());
         }
 
-        NativeObject processConf = (NativeObject) cx.evaluateString(newScope, "processConfig;", "<cmd>", 1, null);
-        if (desc.getAddress() == null && processConf.has("address", null)) desc.setAddress((String) processConf.get("address", null));
-        if (processConf.has("inMem", null)) desc.setTransient((Boolean) processConf.get("inMem", null));
+        NativeObject pconfig = (NativeObject) cx.evaluateString(newScope, "processConfig;", "<cmd>", 1, null);
+        desc.importConf(pconfig);
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ScriptableOutputStream out;

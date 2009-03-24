@@ -1,5 +1,7 @@
 package com.intalio.simpel;
 
+import org.mozilla.javascript.IdScriptableObject;
+
 /**
  * Deployment level information about a process.
  */
@@ -50,5 +52,15 @@ public class Descriptor {
 
     public void setTransient(boolean t) {
         inmem = t;
+    }
+
+    public void importConf(Object conf) {
+        // This introduces a dependency on Rhino, hard to know at this point if it should be moved
+        // somewhere else or makes sense here. Keep an eye on it.
+        if (conf instanceof IdScriptableObject) {
+            IdScriptableObject sconf = (IdScriptableObject)conf;
+            if (sconf.has("address", null)) setAddress((String) sconf.get("address", null));
+            if (sconf.has("inMem", null)) setTransient((Boolean) sconf.get("inMem", null));
+        }
     }
 }
