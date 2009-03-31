@@ -1,0 +1,9 @@
+To add this lexer to your pygment installation you have to have python setuptools installed. Then just run:
+
+python setup.py install
+
+For an installation in your home directory:
+
+python setup.py install
+
+If you get an error message on home installation, just read it, it should help.
