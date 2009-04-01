@@ -6,4 +6,6 @@ For an installation in your home directory:
 
 python setup.py install
 
-If you get an error message on home installation, just read it, it should help.
+If you get an error message on home installation, just read it, it should help (usually it's just a missing PYTHONPATH). Once the setup is complete, just run pygmentize to generate a syntax highlighted HTML file. For example:
+
+pygmentize -l simpel -O full,style=pastie -f html -o vote.html vote.simpel
