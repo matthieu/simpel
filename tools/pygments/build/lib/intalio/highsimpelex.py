@@ -19,7 +19,7 @@ class SimPELLexer(RegexLexer):
             (r'//.*?\n', Comment),
             (r'/\*.*?\*/', Comment),
             (r'\|.*?\|', Name.Variable),
-            (r'</?[^>]+/?>', Name.Tag),
+            (r'</?[$a-zA-Z_]+[^>]+/?>', Name.Tag),
             (r'[{}\[\]();.]+', Punctuation),
             (r'(process)(\s+)([$a-zA-Z_]+)', bygroups(Keyword, Text, Name.Class)),
             (r'(for|while|if|else|throw|try|receive|request|scope|onQuery|'
@@ -33,7 +33,7 @@ class SimPELLexer(RegexLexer):
             (r'[0-9]+', Number.Integer),
             (r'"(\\\\|\\"|[^"])*"', String.Double),
             (r"'(\\\\|\\'|[^'])*'", String.Single),
-            (r'[~\^\*!%&\|+=:;,/?\\-]+', Operator),
+            (r'[~\^\*!%<&>\|+=:;,/?\\-]+', Operator),
             (r'\s+', Text),
         ]
     }

@@ -1,8 +1,0 @@
-README
-setup.py
-highsimpelex.egg-info/PKG-INFO
-highsimpelex.egg-info/SOURCES.txt
-highsimpelex.egg-info/dependency_links.txt
-highsimpelex.egg-info/entry_points.txt
-highsimpelex.egg-info/top_level.txt
-intalio/highsimpelex.py
