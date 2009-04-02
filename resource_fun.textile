@@ -3,4 +3,39 @@ layout: default
 title: Resource Fun
 ---
 
-This tutorial needs to be written, Shakespeare has been contacted.
+If you aren't comfortable with the environment in which SimPEL processes execute and want to run the process shown in this tutorial, it's recommended to have a prior look at the "first tutorial":first_process.html. But if you're just looking around, feel free to proceed. All the files mentioned here are located in the distribution under the_samples/vote_ directory or "online":http://github.com/intalio/simplex/tree/master/src/main/samples/vote.
+
+h2(#voting_toolkit). A Voting Process and Its Toolkit
+
+This tutorial is going to show you how to implement a RESTful web service using SimPEL, demonstrating mostly connectedness and addressability (the uniform interface comes with the limited number of SimPEL constructs that closely match HTTP methods). Our goal is to build a voting service and let everybody express their opinion. The process itself is fairly straightforward:
+
+ * Someone submits a new vote subject, with a list of participants' emails.
+ * Participants get notified that a new vote started and are invited to vote at a specific URL.
+ * Participants can vote by submitting their choice.
+ * At anytime the current tally can be queried.
+ * When the vote is over, it can be closed. The tally stays available but voting isn't allowed anymore.
+ * A vote can be completely canceled.
+
+This process is probably slightly atypical in the sense that it's completely self contained (most business processes leverage existing services). However it will demonstrate how we can have a process use an external library and integrate with plain Javascript code fairly easily.
+
+During the execution, we're going to maintain an XML data structure representing all the current ballots. From this structure we'll extract the current tally. Here is what an example list of ballots will look like:
+
+{% highlight xml %}
+<ballots>
+  <ballot email="fred">simple</ballot>
+  <ballot email="tonio">open</ballot>
+  <ballot email="nico">open</ballot>
+</ballots>
+{% endhighlight %}
+
+We're going to need a library to add ballots and build a tally based on this data structure. We don't want to do all that data manipulation in the process, it would make it harder to read and maintain and wouldn't promote a proper separation of concern. By putting that code in a separate library, we'll be able to change the ballots list without even touching the process.
+
+Library is actually a big word for not much in our case, we'll only need 3 functions included in the "vote-lib.js":http://github.com/intalio/simplex/blob/master/src/main/samples/vote/vote-lib.js file. The implementation is fairly straightforward, even if you're not very familiar with Javascript you should be able to grasp the gist of it. It's not necessary to understand it all anyway, what we're really interested in is how the process will use these.
+
+h2(#process). The Process
+
+Before diving into specific sections of the vote process, it's useful to have a look at the overall structure for a minute:
+
+{% highlight simpel %}
+{% endhighlight %}
+
