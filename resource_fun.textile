@@ -3,7 +3,7 @@ layout: default
 title: Resource Fun
 ---
 
-If you aren't comfortable with the environment in which SimPEL processes execute and want to run the process shown in this tutorial, it's recommended to have a prior look at the "first tutorial":first_process.html. But if you're just looking around, feel free to proceed. All the files mentioned here are located in the distribution under the_samples/vote_ directory or "online":http://github.com/intalio/simplex/tree/master/src/main/samples/vote.
+If you aren't comfortable with the environment in which SimPEL processes execute and want to run the process shown in this tutorial, it's recommended to have a prior look at the "first tutorial":first_process.html. But if you're just looking around, feel free to proceed. All the files mentioned here are located in the distribution under the _samples/vote_ directory or "online":http://github.com/intalio/simplex/tree/master/src/main/samples/vote.
 
 h2(#voting_toolkit). A Voting Process and Its Toolkit
 
@@ -32,10 +32,242 @@ We're going to need a library to add ballots and build a tally based on this dat
 
 Library is actually a big word for not much in our case, we'll only need 3 functions included in the "vote-lib.js":http://github.com/intalio/simplex/blob/master/src/main/samples/vote/vote-lib.js file. The implementation is fairly straightforward, even if you're not very familiar with Javascript you should be able to grasp the gist of it. It's not necessary to understand it all anyway, what we're really interested in is how the process will use these.
 
-h2(#process). The Process
+h2(#closer_look). A Closer Look
 
 Before diving into specific sections of the vote process, it's useful to have a look at the overall structure for a minute:
 
 {% highlight simpel %}
+processConfig.inMem = false;
+processConfig.address = "/api/vote";
+
+rootUrl = "http://localhost:3434"
+emailUrl = "http://localhost:3434/api/mock/email";
+load("vote-lib.js");
+
+// Provides links to additional resources that can be used during the vote.
+function addLinks(vote, addr) {
+  vote.appendChild(<action rel="cancel" href={rootUrl + addr + "/cancel"} method="POST"/>);
+  vote.appendChild(<link rel="tally" href={rootUrl + addr + "/tally"} />);
+  return vote;
+}
+
+// Links to a ballot resource.
+function createBallotInfo(vote, voteUrl, name) {
+  info = vote.copy();
+  info.appendChild(<link rel="ballot" href={rootUrl + voteUrl + "/ballot/" + name} />);
+  info.appendChild(<action rel="ballot" href={rootUrl + voteUrl + "/ballot/" + name} method="POST" />);
+  return info;
+}
+
+// Utility function to build the target URL of a ballot.
+function buildBallotUrl(processUrl, name) {
+  return rootUrl + processUrl.slice(4) + "/" + name;
+}
+
+process Vote {
+  receive(self) { |newvote|
+    vote = addLinks(newvote, self);
+    status = <status>Vote created</status>;
+    reply(status);
+  }
+
+  // Sending an e-mail to all participants to let them know a vote started
+  m = 0;
+  while(m < vote.participants.name.length()) {
+    inviteEmail = <email><to>{ vote.participants.name[m] + "@intalio.com" }</to></email>;
+    inviteEmail.body = "A vote has been started on '" + vote.text + 
+      "'. Please cast your vote at " + buildBallotUrl(self, vote.participants.name[m]) + ".";
+    request(emailUrl, "post", inviteEmail);
+    m = m + 1;
+  }
+
+  // Declaring all necessary resources
+  tally = resource("/tally");
+  ballot = resource("/ballot/{name}");
+  close = resource("/close");
+  cancel = resource("/cancel");
+
+  // This element will hold all the ballots
+  ballots = <ballots></ballots>;
+
+  voteOpen = true;
+  scope {
+    receive(cancel) { |r|
+      cancelResp = <vote>Vote canceled.</vote>;
+      reply(cancelResp);
+    }
+  } onQuery(self) {
+    reply(vote);
+  } onQuery(tally) {
+    currentTally = getCurrentTally(ballots);
+    reply(currentTally);
+  } onReceive(ballot) { |b, name|
+    if (voteOpen == true) {
+      ballots = updateBallots(ballots, b.ballot, name);
+      userBallot = getUserBallot(ballots, name);
+      reply(userBallot);
+    } else {
+      resp = <vote>Vote is closed.</vote>;
+      reply(resp);
+    }
+  } onQuery(ballot) { |name|
+    userBallot = getUserBallot(ballots, name);
+    if (userBallot.length != 0) {
+      reply(userBallot);
+    } else {
+      info = createBallotInfo(vote, self, name);
+      reply(info);
+    }
+  } onReceive(close) {
+    voteOpen = false;
+    finalTally = getCurrentTally(ballots);
+    reply(finalTally);
+  }
+}
 {% endhighlight %}
 
+The header contains mostly global constants definition and a few utility functions. Those functions are plain Javascript, making the manipulation of XML documents very easy thanks to the "E4X":https://developer.mozilla.org/en/E4X extensions. Then comes the process body itself which is roughly in two parts: the initialization of the process and the vote interactions. The part not to miss in the header is the _load_ call, just after the _emailUrl_ definition. That's how we load the small vote API functions in the current context, just by loading the file that contains them (the path is relative to the process file).
+
+h3(#initialization). Initialization
+
+The process starts by receiving a request on the _self_ resource, by now you should be familiar with this pattern:
+
+{% highlight simpel %}
+process Vote {
+  receive(self) { |newvote|
+    vote = addLinks(newvote, self);
+    status = <status>Vote created</status>;
+    reply(status);
+  }
+
+  // Sending an e-mail to all participants to let them know a vote started
+  m = 0;
+  while(m < vote.participants.name.length()) {
+    inviteEmail = <email><to>{ vote.participants.name[m] + "@intalio.com" }</to></email>;
+    inviteEmail.body = "A vote has been started on '" + vote.text + 
+      "'. Please cast your vote at " + buildBallotUrl(self, vote.participants.name[m]) + ".";
+    request(emailUrl, "post", inviteEmail);
+    m = m + 1;
+  }
+  ...
+{% endhighlight %}
+
+Here we're using a block notation for the first receive: the _newvote_ variable is local to the block and contains the received request body. In the block we initialize the vote by inserting links in the received vote structure, in SimPEL any assignment can call an external function. As a result, our vote resource will be decently well connected, requesting it will tell you what can be done next. We end the block with a basic reply.
+
+The following loop is used to call out to a very simple email service. The loop itself is a basic _while_. In this case a "for each" type of loop iterating on the selected XML nodes would probably much more elegant but at the time of this writing, it hasn't been implemented in SimPEL yet. It should be coming really soon however.
+
+The composition of the email request is done using E4X embedded expressions. Then it's sent in a _POST_ request to the _emailUrl_ defined in the process header. Each _POST_ will result in an email being sent to the provided address. If you're wondering about the implementaion of the email web service, for the purpose of this tutorial we've mocked it with another process. Its implementation is in the "vote-email-mock.simpel":http://github.com/intalio/simplex/blob/master/src/main/samples/vote/vote-email-mock.simpel file also contained in the samples directory of the distribution.
+
+h3(#interactions). Vote Interactions
+
+Once an e-mail has been sent to all participants, the vote itself can start. All participants are expected to cast their vote by calling back the process. In the real world you would probably have a web UI that would server as a frontend to the vote web service but that's outside of the scope of this tutorial. What's really interesting to us is what simple HTTP requests the process will handle.
+
+The set of resources that the vote exposes, in addition to the vote itself represented by the process and its _self_ resource, are declared like this:
+
+{% highlight simpel %}
+  ...
+  // Declaring all necessary resources
+  tally = resource("/tally");
+  ballot = resource("/ballot/{name}");
+  close = resource("/close");
+  cancel = resource("/cancel");
+  ...
+{% endhighlight %}
+
+All resource are declared relatively to _self_ and their declarations are fairly straightforward. The only slight difference is in the _ballot_ resource declaration that uses a URL pattern. This resource will respond to all requests under /ballot/ and we're going to see shortly how the name is bound.
+
+All those resources are used as follow:
+
+{% highlight simpel %}
+  ...
+  // This element will hold all the ballots
+  ballots = <ballots></ballots>;
+
+  voteOpen = true;
+  scope {
+    receive(cancel) { |r|
+      cancelResp = <vote>Vote canceled.</vote>;
+      reply(cancelResp);
+    }
+  } onQuery(self) {
+    reply(vote);
+  } onQuery(tally) {
+    currentTally = getCurrentTally(ballots);
+    reply(currentTally);
+  } onReceive(ballot) { |b, name|
+    if (voteOpen == true) {
+      ballots = updateBallots(ballots, b.ballot, name);
+      userBallot = getUserBallot(ballots, name);
+      reply(userBallot);
+    } else {
+      resp = <vote>Vote is closed.</vote>;
+      reply(resp);
+    }
+  } onQuery(ballot) { |name|
+    userBallot = getUserBallot(ballots, name);
+    if (userBallot.length != 0) {
+      reply(userBallot);
+    } else {
+      info = createBallotInfo(vote, self, name);
+      reply(info);
+    }
+  } onReceive(close) {
+    voteOpen = false;
+    finalTally = getCurrentTally(ballots);
+    reply(finalTally);
+  }
+}
+{% endhighlight %}
+
+As we've seen in the "first tutorial":first_process.html, the scope enables parallel events to happen as long as it's active. Here we have 5 separate possible events and the scope will stay active until the receive it contains get triggered for cancellation. So cancellation is achieved just by allowing the scope to exit, stopping the event listeners and completing the process.
+
+But before cancellation, a lot can happen. The first _onQuery_, listening on _self_ just gets you the current vote. Thanks to the initialization work we've done it returns an XML structure that's well connected, linking to the tally and closing resources. The second _onQuery_ produces the current tally by calling out to the _getCurrentTally_ function, part of our small Javascript library.
+
+The third event and the first onReceive is probably the most important part of our process as it registers individual ballots. Its implementation shouldn't need too much explanation. The interesting part is in the block declaration, more specifically the variables passed to the block, here _b_ and _name_. In an _onReceive_, the first block variable contains the request. Subsequent variables get associated with the URL patterns in the corresponding resource. If you remember the _ballot_ resource declaration, we had a _name_ pattern in its URL. That's where our _name_ variable value will come from: the URL. So if someone POSTs to _ballot/joe_, the _name_ variable will contain "joe".
+
+The same mechanism gets into play in the _onQuery_ on the _ballot_ resource. But an onQuery maps to an HTTP GET request, there's no body, hence the URL parameters start right from the first block variable. Also notice how we reply in both branches of the _if_. This is important, requests always need a response and without a _reply_ you would get an error.
+
+The final _onReceive_ has nothing really special worth mentioning, it just doesn't care what the request exactly is so it even doesn't declare a block variable.
+
+h2(#lets_execute). Let's Execute!
+
+After all these explanations, it's time for some playing. Start the SimPEL runtime and deploy the vote process by copying the whole _samples/vote_ directory under _scripts_. Our mock email service will be deployed as well. Your processes can be deployed under any directory structure under _scripts_ so feel free to arrange them you way you want.
+
+Once everything deployed, to start the process we'll use our old _curl_ friend:
+
+{% highlight bash %}
+$ curl -v --data "<vote><participants><name>mriou</name><name>assaf</name></participants><text>Pepperoni or salsiccia?</text></vote>" --request POST --header "Content-Type: application/xml" http://localhost:3434/api/vote
+{% endhighlight %}
+
+The returned location should be something like http://localhost:3434/api/vote/1054. Let's see what we can get there:
+
+{% highlight bash %}
+$ curl --request GET http://localhost:3434/api/vote/1054
+<?xml version="1.0" encoding="UTF-8"?>
+<vote xmlns=""><participants><name>mriou</name><name>assaf</name></participants><text>Pepperoni or salsiccia?</text><action href="http://localhost:3434/api/vote/1053/cancel" method="POST" rel="cancel"/><link href="http://localhost:3434/api/vote/1053/tally" rel="tally"/></vote>
+{% endhighlight %}
+
+As expected, we get back the vote structure, including interesting links. Now let's submit a couple of votes:
+
+{% highlight bash %}
+$ curl --data "<vote><ballot>Pepperoni</ballot></vote>" --request POST --header "Content-Type: application/xml" http://localhost:3434/api/vote/1054/ballot/mriou
+Pepperoni
+$ curl --data "<vote><ballot>Salsiccia</ballot></vote>" --request POST --header "Content-Type: application/xml" http://localhost:3434/api/vote/1054/ballot/assaf
+Salsiccia
+{% endhighlight %}
+
+This should give us a tally with a couple of entries:
+
+{% highlight bash %}
+$ curl --request GET http://localhost:3434/api/vote/1054/tally
+<?xml version="1.0" encoding="UTF-8"?>
+<tally><vote text="Pepperoni">1</vote><vote text="Salsiccia">1</vote></tally>
+{% endhighlight %}
+
+And it seems we have a draw!. From here, you should be able to close the vote by yourself and see what happens if you try to submit a ballot after. Also try to cancel the process and again, see what happens if you get the tally.
+
+One last thing: there's a sample web page that does the same as our _curl_ session but a bit more graphically. It relies on some Javascript code using "JQuery":http://jquery.com. Give it a try, it's fun: "http://localhost:3434/vote/":http://localhost:3434/vote/.
+
+h2(#final_notes). Final Notes
+
+You should now be much more familiar with building your own resources with SimPEL in just a few lines. It requires a bit of thinking but the result is remarkably clean. Of course the process we've seen here still stays very simple but it's very easy to extend, relying either on other services (as our email mock demonstrated) or on libraries.
