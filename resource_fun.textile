@@ -239,7 +239,7 @@ Once everything deployed, to start the process we'll use our old _curl_ friend:
 $ curl -v --data "<vote><participants><name>mriou</name><name>assaf</name></participants><text>Pepperoni or salsiccia?</text></vote>" --request POST --header "Content-Type: application/xml" http://localhost:3434/api/vote
 {% endhighlight %}
 
-The returned location should be something like http://localhost:3434/api/vote/1054. Let's see what we can get there:
+The returned location should be something like http://localhost:3434/api/vote/1054. Make sure to use the proper URL id in all the following requests. Now let's see what we can get there:
 
 {% highlight bash %}
 $ curl --request GET http://localhost:3434/api/vote/1054
@@ -270,4 +270,4 @@ One last thing: there's a sample web page that does the same as our _curl_ sessi
 
 h2(#final_notes). Final Notes
 
-You should now be much more familiar with building your own resources with SimPEL in just a few lines. It requires a bit of thinking but the result is remarkably clean. Of course the process we've seen here still stays very simple but it's very easy to extend, relying either on other services (as our email mock demonstrated) or on libraries.
+You should now be much more familiar with building your own resources with SimPEL in just a few lines. It requires a bit of thinking but the result is remarkably clean. Of course the process we've seen here still stays very simple but it's very easy to extend, adding more resources, relying on other services (as our email mock demonstrated) or on libraries.
