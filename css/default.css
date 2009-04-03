@@ -186,11 +186,11 @@ th, thead td {
 #content { /* Parent Wrapper for inside boxes */
 /*  display: inline; *//* IE Hack */
   float: right;
-  width: 710px;
-  margin-top: 0.5em;
-  margin-left: 0.3em;
-  margin-right: 1em;
-  margin-bottom: 5em;
+  width: 700px;
+  margin-top: 10px;
+  margin-left: 5px;
+  margin-right: 15px;
+  margin-bottom: 50px;
 }
 
 ol.toc {
