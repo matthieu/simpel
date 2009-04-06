@@ -352,3 +352,11 @@ process ScopeAll {
 process SimpleFunctionCall {
   foo(a,b,c);
 }
+
+#=============================================================
+# Get request sugar with header
+#
+
+process GetRequestSugar {
+  get("/foo", getHeaders());
+}

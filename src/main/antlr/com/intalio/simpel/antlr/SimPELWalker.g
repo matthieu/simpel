@@ -96,8 +96,8 @@ scope BPELScope, Parent;
 
 proc_stmt
 	:	pick | flow | if_ex | while_ex | until_ex | foreach | forall | try_ex | scope_ex | with_ex
-		| invoke | receive | request | reply | assign | throw_ex | wait_ex | exit | signal | join
-		| variable | partner_link | funct_call;
+		| invoke | receive | request | get | reply | assign | throw_ex | wait_ex | exit 
+		| signal | join | variable | partner_link | funct_call;
 block
 scope Parent;
 	:	^(SEQUENCE 
@@ -139,6 +139,7 @@ scope ExprContext, Parent;
         OBuilder.StructuredActivity<OSwitch> oswitch = builder.build($e, OSwitch.class,
             $BPELScope::oscope, $Parent[-1]::activity, $ExprContext::expr);
         $Parent::activity = oswitch;
+        $ExprContext::expr = null;
     } b1=(body)
     (^(ELSE b2=(body)))?);
 
@@ -246,7 +247,7 @@ reply
     };
 receive	
 scope ReceiveBlock;
-	:	^(RECEIVE ^(p=ID o=ID? correlation?) {
+	:	^(RECEIVE ^(p=ID o=ID? hash_form?) {
 	        // The receive input is the lvalue of the assignment expression in which this receive is enclosed (if it is)
 	        OBuilder.StructuredActivity<OPickReceive> rec;
 	        if (ExprContext_stack.size() > 0)
@@ -259,7 +260,7 @@ scope ReceiveBlock;
             if (rec.getOActivity().onMessages.size() > 0)
 		        $ReceiveBlock::activity = rec.getOActivity().onMessages.get(0);
             // TODO support for multiple "correlations"
-            if ($correlation.corr != null) builder.addCorrelationMatch(rec.getOActivity(), $correlation.corr); 
+            if ($hash_form.corr != null) builder.addCorrelationMatch(rec.getOActivity(), $hash_form.corr);
 		} )
 		(prb=(param_block))?;
 request
@@ -283,7 +284,20 @@ scope ReceiveBlock, ExprContext;
         }
         (prb=(param_block))?;
 
-assign	
+// TODO implement get syntax sugar once we have hash support
+get
+scope ExprContext;
+    : ^(GET_REQ {
+        $ExprContext::expr = new SimPELExpr(builder.getProcess());
+    } e=(expr) {
+        $ExprContext::expr.setExpr(deepText($e));
+
+        $ExprContext::expr = new SimPELExpr(builder.getProcess());
+    } (e=(expr) {
+        $ExprContext::expr.setExpr(deepText($e));
+    } )?);
+
+assign
 scope ExprContext;
 	:	^(ASSIGN {
         $ExprContext::expr = new SimPELExpr(builder.getProcess());
@@ -335,17 +349,17 @@ scope ExprContext;
 partner_link
 	:	^(PARTNERLINK ID+);
 
-correlation
+hash_form
 returns [List corr]
-	:	^(CORRELATION (corr_mapping {
-	        corr = $corr_mapping.corr;
+	:	^(HASH (key_val {
+	        corr = $key_val.res;
 	    } )+);
-corr_mapping
-returns [List corr]
-	:	^(CORR_MAP fn=ID var=ID) {
-	        corr = new ArrayList(2);
-	        corr.add(deepText($fn));
-	        corr.add(deepText($var));
+key_val
+returns [List res]
+	:	^(HASH_KV fn=ID var=ID) {
+	        res = new ArrayList(2);
+	        res.add(deepText($fn));
+	        res.add(deepText($var));
 	    };
 
 // XML
@@ -365,7 +379,7 @@ expr	:	s_expr;
 funct_call
 @init { boolean inAssign = true; ArrayList exprs = new ArrayList(); }
 	:	^(CALL {
-	        if (ExprContext_stack.size() == 0) {
+	        if (ExprContext_stack.size() == 0 || ((ExprContext_scope)ExprContext_stack.peek()).expr == null) {
 	            inAssign = false;
                 ExprContext_stack.push(new ExprContext_scope());	            
 	            $ExprContext::expr = new SimPELExpr(builder.getProcess());

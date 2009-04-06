@@ -9,8 +9,8 @@ tokens {
     ROOT; PROCESS; PICK; SEQUENCE; FLOW; IF; ELSEIF; ELSE; WHILE; UNTIL; FOREACH; FORALL; INVOKE;
     RECEIVE; REPLY; ASSIGN; THROW; WAIT; EXIT; TIMEOUT; TRY; CATCH; CATCH_ALL; SCOPE; EVENT;
     RESOURCE;
-    REQUEST; REQ_BASE; ONEVENT; ONALARM; ONRECEIVE; ONUPDATE; ONQUERY; COMPENSATION; COMPENSATE;
-    CORRELATION; CORR_MAP; PARTNERLINK; VARIABLE; BLOCK_PARAM;
+    REQUEST; REQ_BASE; GET_REQ; ONEVENT; ONALARM; ONRECEIVE; ONUPDATE; ONQUERY; COMPENSATION; COMPENSATE;
+    HASH; HASH_KV; PARTNERLINK; VARIABLE; BLOCK_PARAM;
     SIGNAL; JOIN; WITH; MAP;
     EXPR; EXT_EXPR; XML_LITERAL; CALL; NAMESPACE; NS; PATH; XML; PRED;
 }
@@ -119,8 +119,8 @@ proc_stmt
 @init { paraphrases.push("in a process"); }
 @after { paraphrases.pop(); }
 	:	pick | flow | if_ex | while_ex | until_ex | foreach | forall | try_ex | scope_ex | with_ex
-		| receive | request | invoke | ((reply | assign | throw_ex | wait_ex | exit | signal | join
-		| variables | partner_link | funct_call) SEMI!);
+		| receive | request | invoke | ((reply | assign | throw_ex | wait_ex | exit | get  
+		| signal | join | variables | partner_link | funct_call) SEMI!);
 
 block
 @init { paraphrases.push("in a block of statements"); }
@@ -239,17 +239,19 @@ receive	: receive_base param_block -> ^(RECEIVE receive_base) param_block
 receive_base
 @init { paraphrases.push("in a receive"); }
 @after { paraphrases.pop(); }
-        : 'receive' '(' p=ID (',' o=ID (',' correlation)? )? ')' -> ^($p $o? correlation?);
+        : 'receive' '(' p=ID (',' o=ID (',' hash_form)? )? ')' -> ^($p $o? hash_form?);
 
 request
 options {backtrack=true;}
-        :	request_base param_block -> ^(REQUEST request_base) param_block
+        : request_base param_block -> ^(REQUEST request_base) param_block
           | request_base SEMI -> ^(REQUEST request_base);
 
 request_base
 @init { paraphrases.push("in a request"); }
 @after { paraphrases.pop(); }
-        :	'request' '(' expr (',' meth=STRING (',' msg=ID)?)? ')' -> ^(REQ_BASE expr $meth? $msg?);
+        : 'request' '(' expr (',' meth=STRING (',' msg=ID)?)? ')' -> ^(REQ_BASE expr $meth? $msg?);
+
+get     : 'get' '(' path=expr (',' head=expr)? ')' -> ^(GET_REQ $path $head?);
 
 reply
 @init { paraphrases.push("in a reply"); }
@@ -307,10 +309,10 @@ partner_link
 @after { paraphrases.pop(); }
 	:	'partnerLink' pl+=ID (',' pl+=ID)* -> ^(PARTNERLINK $pl+);
 
-correlation
-	:	'{' corr_mapping (',' corr_mapping)* '}' -> ^(CORRELATION corr_mapping+);
-corr_mapping
-	:	fn=ID ':' var=ID -> ^(CORR_MAP $fn $var);
+hash_form
+	:	'{' key_val (',' key_val)* '}' -> ^(HASH key_val+);
+key_val
+	:	k=ID ':' val=ID -> ^(HASH_KV $k $val);
 
 funct	:	'function'^ f=ID '(' ID? (','! ID)* ')' js_block;
 
