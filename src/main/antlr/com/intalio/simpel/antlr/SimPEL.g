@@ -175,7 +175,7 @@ foreach
 forall
 @init { paraphrases.push("in a forall loop"); }
 @after { paraphrases.pop(); }
-        :	'forall' '(' ID '=' from=expr 'to' to=expr ')' body -> ^(FORALL ID $from $to body);
+        :	'forall' '(' ID '=' from=expr ';' to=expr ')' body -> ^(FORALL ID $from $to body);
 
 try_ex
 @init { paraphrases.push("in a try block"); }
