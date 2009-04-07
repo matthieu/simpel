@@ -237,7 +237,7 @@ scope ReceiveBlock;
         (prb=(param_block))?;
 
 reply	
-  :	^(REPLY msg=ID (pl=ID (op=ID)?)?) {
+  :	^(REPLY (msg=ID (pl=ID (op=ID)?)?)?) {
       if (ReceiveBlock_stack.size() > 0)
         builder.build($msg, OReply.class, $BPELScope::oscope, $Parent::activity,
 			      $ReceiveBlock::activity, text($msg), text($pl), text($op));

@@ -175,7 +175,7 @@ foreach
 forall
 @init { paraphrases.push("in a forall loop"); }
 @after { paraphrases.pop(); }
-        :	'forall' '(' ID '=' from=expr ';' to=expr ')' body -> ^(FORALL ID $from $to body);
+        :	'forall' '(' ID '=' from=expr ';r' to=expr ')' body -> ^(FORALL ID $from $to body);
 
 try_ex
 @init { paraphrases.push("in a try block"); }
@@ -256,7 +256,7 @@ get     : 'get' '(' path=expr (',' head=expr)? ')' -> ^(GET_REQ $path $head?);
 reply
 @init { paraphrases.push("in a reply"); }
 @after { paraphrases.pop(); } // todo allow expressions in replied element
-        : 'reply' '(' ID (',' ID (',' ID)?)? ')' -> ^(REPLY ID (ID ID?)?);
+        : 'reply' '(' (ID (',' ID (',' ID)?)?)? ')' -> ^(REPLY (ID (ID ID?)?)?);
 
 assign
 @init { paraphrases.push("in an assignment"); }

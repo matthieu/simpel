@@ -317,7 +317,9 @@ public class OBuilder extends BaseCompiler {
 
     public SimpleActivity buildReply(OReply oreply, OScope oscope, OComm ocomm,
                                      String var, String plinkOrRes, String operation) {
-        oreply.variable = resolveVariable(oscope, var, operation, false);
+        if (var != null)
+            oreply.variable = resolveVariable(oscope, var, operation, false);
+        
         if (plinkOrRes == null) {
             if (ocomm == null) throw new BuilderException("No parent receive but reply with var " + var +
                     " has no plinkOrRes/operation or resource information.");
