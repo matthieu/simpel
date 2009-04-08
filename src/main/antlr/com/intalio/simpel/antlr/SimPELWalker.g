@@ -9,7 +9,7 @@ tokens {
 }
 scope BPELScope { OScope oscope; }
 scope Parent { OBuilder.StructuredActivity activity; }
-scope ReceiveBlock { OComm activity; }
+scope ReceiveBlock { OComm activity; boolean replied; }
 scope ExprContext { SimPELExpr expr; }
 
 @header {
@@ -238,12 +238,14 @@ scope ReceiveBlock;
 
 reply	
   :	^(REPLY (msg=ID (pl=ID (op=ID)?)?)?) {
-      if (ReceiveBlock_stack.size() > 0)
+      if (ReceiveBlock_stack.size() > 0) {
         builder.build($msg, OReply.class, $BPELScope::oscope, $Parent::activity,
 			      $ReceiveBlock::activity, text($msg), text($pl), text($op));
-      else
+        $ReceiveBlock::replied = true;
+      } else {
         builder.build($msg, OReply.class, $BPELScope::oscope, $Parent::activity,
 			      null, text($msg), text($pl), text($op));
+	  }
     };
 receive	
 scope ReceiveBlock;
@@ -262,7 +264,14 @@ scope ReceiveBlock;
             // TODO support for multiple "correlations"
             if ($hash_form.corr != null) builder.addCorrelationMatch(rec.getOActivity(), $hash_form.corr);
 		} )
-		(prb=(param_block))?;
+		(prb=(param_block) {
+		    // Implicit empty reply
+		    if ($ReceiveBlock::activity != null && $ReceiveBlock::replied == false && $ReceiveBlock::activity.isRestful()) {
+                builder.build($p, OReply.class, $BPELScope::oscope, $Parent::activity,
+                    $ReceiveBlock::activity, null, null, null);
+                $ReceiveBlock::replied = true;
+		    }
+		})?;
 request
 scope ReceiveBlock, ExprContext;
     :	^(REQUEST {
