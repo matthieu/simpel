@@ -225,7 +225,7 @@ But before cancellation, a lot can happen. The first _onQuery_, listening on _se
 
 The third event and the first onReceive is probably the most important part of our process as it registers individual ballots. Its implementation shouldn't need too much explanation. The interesting part is in the block declaration, more specifically the variables passed to the block, here _b_ and _name_. In an _onReceive_, the first block variable contains the request. Subsequent variables get associated with the URL patterns in the corresponding resource. If you remember the _ballot_ resource declaration, we had a _name_ pattern in its URL. That's where our _name_ variable value will come from: the URL. So if someone POSTs to _ballot/joe_, the _name_ variable will contain "joe".
 
-The same mechanism gets into play in the _onQuery_ on the _ballot_ resource. But an onQuery maps to an HTTP GET request, there's no body, hence the URL parameters start right from the first block variable. Also notice how we reply in both branches of the _if_. This is important, requests always need a response and without a _reply_ you would get an error.
+The same mechanism gets into play in the _onQuery_ on the _ballot_ resource. But an onQuery maps to an HTTP GET request, there's no body, hence the URL parameters start right from the first block variable. Also notice how we reply in both branches of the _if_. This is important, requests always need a response. In a block without a _reply_, a default empty reply gets generated, which isn't what we want here.
 
 The final _onReceive_ has nothing really special worth mentioning, it just doesn't care what the request exactly is so it even doesn't declare a block variable.
 
