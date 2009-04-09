@@ -3,4 +3,154 @@ layout: default
 title: SimPEL Language Reference
 ---
 
-The mystery is deepening.
+h2(#basic_lang). Basic Language Constructs
+
+Before diving into language elements, introducing a few common definitions is necessary:
+
+{% highlight text %}
+ns_id         :  (ID '::')? ID;
+block         :  '{' proc_stmt+ '}';
+param_block   :  '{' ('|' ID (',' in+=ID)* '|')? proc_stmt+ '}';
+body  :  block | proc_stmt;
+{% endhighlight %}
+
+A ns_id is an identifier preceded by an optional namespace prefix, with '::' as separator. For example _Foo_ or _myns::Foo_ are valid ns_id instances. A block is pretty self explanatory, it's at least one process statement between curly braces. Like { reply(); }. A param_block is like a block but includes some parameters, provided between pipe characters ('|') and separated by commas. A valid param_block could be { |a| reply(a); }. A body is either a block or a single process statement.
+
+All statements in SimPEL are required to end with a semicolon.
+
+h3(#process). Process
+
+The _process_ construct is the root of a process definition. It defines a name as a ns_id and contains the whole process body:
+
+{% highlight text %}
+process  :  'process' ns_id body;
+{% endhighlight %}
+
+A process with no namespace prefix will be created under the default http://ode.apache.org/simpel/1.0/definition namespace. In most cases you don't really need to worry about namespaces, name collision in processes isn't that common.
+
+Examples:
+
+{% highlight simpel %}
+process Purchase {
+   ...
+}
+
+process myns::ServiceMock {
+}
+{% endhighlight %}
+
+h3(#conditions). Conditions
+
+Conditions are pretty much what you would expect:
+
+{% highlight text %}
+if: 'if' '(' expr ')' body ('else' body)?
+{% endhighlight %}
+
+Any valid "expression":#expr can be used in an _if_ as long as it's boolean (returns true or false). The _else_ branch is optional. At the moment there's no specific syntax for chaining _else_ and _if_ (like elseif) although that should come soon.
+
+The _else_ branches associate to the closer previous _if_ where there's ambiguity.
+
+Example:
+
+{% highlight simpel %}
+if (updatedTask.data.accept == "true") {
+  ...
+} else {
+  ...
+}
+{% endhighlight %}
+
+h3(#loops). Loops
+
+The base loop is a _while_ defined this way:
+
+{% highlight text %}
+while:  'while' '(' expr ')' body
+{% endhighlight %}
+
+It's simply composed of a boolean "expression":#expr and a body. The body will be executed as long as the condition evaluates to true. The condition is tested before each execution so if it returns false when first tested, the body will never be executed.
+
+Example:
+
+{% highlight simpel %}
+i = 0; j = 1; cur = 1;
+while (cur <= counter) {
+   k = i; i = j; j = k+j; cur = cur+1;
+}
+{% endhighlight %}
+
+The SimPEL grammar also supports _until_, _foreach_ and _forall_ (with parallel semantics) loops but they're unimplemented at this time.
+
+h3(#wait). Wait
+
+Wait allows delayed execution, waiting for a certain period of time before completing. The delay is specified using an "ISO 8601":http://www.iso.ch/markete/8601.pdf (pdf) duration or date/time formatted string. For example P1Y2MT2H or PT2M30S are valid durations. A valid date/time is 1999-05-31T13:20:00-05:00.
+
+Example:
+
+{% highlight simpel %}
+wait("PT1S");
+{% endhighlight %}
+
+h3(#scope). Scope
+
+A scope is an enclosing context, grouping a range of statements. It defines variables accessibility and the availability of handlers (like "event handlers":rest_support). By itself, a scope doesn't serve any purpose but it supports the definition of other constructs:
+
+scope:      'scope' ('(' ID ')')? body scope_stmt*;
+scope_decl: onevent | onalarm | onquery | onreceive | onupdate | compensation;
+
+A scope can be named using an identifier. It contains a body, eventually followed by several related declarations. For more information regarding the event handler (the on* elements), refer to the "RESTful Communications":#rest_support section. Compensation and onAlarm are unimplemented at this time.
+
+Example:
+
+{% highlight simpel %}
+scope {
+  counter = 0;
+  while(counter > 0) {
+    wait("PT10S");
+  }
+} onQuery(self) {
+  links = <counter></counter>;
+  links.decrement = dec;
+  links.value = value;
+  reply(links);
+} onQuery(value) {
+  reply(counter);
+} onReceive(dec) {
+  counter = counter - 1;
+  reply(counter);
+}
+{% endhighlight %}
+
+h2(#expr). Expressions
+
+h3(#literals_op). Literals and Operators
+
+Supported literals at this time are integers (14 or 1000), strings with escape sequences ("abc" or "\tfoo\n") and XML (<foo>bar</foo>).Support for floats should come very soon. Numbers have the same characteristics as in Javascript. Integers are considered reliable (numbers without a period or exponent notation) to 15 digits.
+
+Supported operators from lower to higher precedence: 
+
+{% highlight text %}
+==, !=, <, >, <=, >=, &&, ||, +, -, *, /, ! and unary -.
+{% endhighlight %}
+
+h3(#variable). Variables and Scoping
+
+h3(#expression). Expressions
+
+h3(#e4x). E4X Support
+
+h2(#rest_support). RESTful Communications
+
+h3(#providing). Providing a Resource
+
+h2(#calling). Calling Resources
+
+h2(#running_env). Running Environment
+
+
+{% highlight simpel %}
+{% endhighlight %}
+{% highlight text %}
+{% endhighlight %}
+
