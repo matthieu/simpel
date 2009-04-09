@@ -136,9 +136,26 @@ Supported operators from lower to higher precedence:
 
 h3(#variable). Variables and Scoping
 
-h3(#expression). Expressions
+Variable declaration in SimPEL is implicit and enclosed in the nearest scope where it's first used. A variable starts to exist when it's first assigned and stops to exist when the scope enclosing that first assignment exits. Variables can't be shadowed (where a name hides another identical name in a higher level scope), they're always redefined.
+
+Variable assignment has a copy semantic, the content is duplicated.
 
 h3(#e4x). E4X Support
+
+In addition to classic expressions (like foo = bar + 4), SimPEL supports most of the "E4X":https://developer.mozilla.org/en/E4X specification. This translates into the following properties:
+
+ * XML literals
+ * Embed expressions in the literals using { ... } escapes.
+ * Easy access to XML nodes (order.item.@id)
+
+Detailing all the features of E4X is outside the scope of this specification, please check the "E4X specification":http://www.ecma-international.org/publications/standards/Ecma-357.htm for more.
+
+Examples:
+
+{% highlight simpel %}
+inviteEmail = <email><to>{ vote.participants.name[m] + "@intalio.com" }</to></email>;
+inviteEmail.body = "Hi, how are you?";
+{% endhighlight %}
 
 h2(#rest_support). RESTful Communications
 
