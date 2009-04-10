@@ -47,7 +47,7 @@ Conditions are pretty much what you would expect:
 if: 'if' '(' expr ')' body ('else' body)?
 {% endhighlight %}
 
-Any valid "expression":#expr can be used in an _if_ as long as it's boolean (returns true or false). The _else_ branch is optional. At the moment there's no specific syntax for chaining _else_ and _if_ (like elseif) although that should come soon.
+Any valid "expression":#expr can be used in an _if_ as long as it's boolean (returns true or false). The _else_ branch is optional. At the moment there's %[todo]no specific syntax for chaining% _else_ and _if_ (like elseif) although that should come soon.
 
 The _else_ branches associate to the closer previous _if_ where there's ambiguity.
 
@@ -80,7 +80,7 @@ while (cur <= counter) {
 }
 {% endhighlight %}
 
-The SimPEL grammar also supports _until_, _foreach_ and _forall_ (with parallel semantics) loops but they're unimplemented at this time.
+The SimPEL grammar also supports _until_, _foreach_ and _forall_ (with parallel semantics) loops but %[todo]they're unimplemented at this time%.
 
 h3(#wait). Wait
 
@@ -99,7 +99,7 @@ A scope is an enclosing context, grouping a range of statements. It defines vari
 scope:      'scope' ('(' ID ')')? body scope_stmt*;
 scope_decl: onevent | onalarm | onquery | onreceive | onupdate | compensation;
 
-A scope can be named using an identifier. It contains a body, eventually followed by several related declarations. For more information regarding the event handler (the on* elements), refer to the "RESTful Communications":#rest_support section. Compensation and onAlarm are unimplemented at this time.
+A scope can be named using an identifier. It contains a body, eventually followed by several related declarations. For more information regarding the event handler (the on* elements), refer to the "RESTful Communications":#rest_support section. %[todo]Compensation and onAlarm are unimplemented at this time.%
 
 Example:
 
@@ -126,7 +126,7 @@ h2(#expr). Expressions
 
 h3(#literals_op). Literals and Operators
 
-Supported literals at this time are integers (14 or 1000), strings with escape sequences ("abc" or "\tfoo\n") and XML (<foo>bar</foo>).Support for floats should come very soon. Numbers have the same characteristics as in Javascript. Integers are considered reliable (numbers without a period or exponent notation) to 15 digits.
+Supported literals at this time are integers (14 or 1000), strings with escape sequences ("abc" or "\tfoo\n") and XML (<foo>bar</foo>).%[todo]Support for floats should come very soon%. %[todo]Native arrays and hashes support% is also planned (for the moment, XML partly fills that gap). Numbers have the same characteristics as in Javascript. Integers are considered reliable (numbers without a period or exponent notation) to 15 digits.
 
 Supported operators from lower to higher precedence: 
 
@@ -140,9 +140,13 @@ Variable declaration in SimPEL is implicit and enclosed in the nearest scope whe
 
 Variable assignment has a copy semantic, the content is duplicated.
 
+h3(#other). Other Language Constructs
+
+Other constructs like %[todo]pick, flow (with signals and joins), try/catch, with, throw, compensate, exit% will find their way in SimPEL but they're all unimplemented at this time.
+
 h3(#e4x). E4X Support
 
-In addition to classic expressions (like foo = bar + 4), SimPEL supports most of the "E4X":https://developer.mozilla.org/en/E4X specification. This translates into the following properties:
+In addition to classic expressions (like foo = bar + 4), SimPEL supports %[todo]most% of the "E4X":https://developer.mozilla.org/en/E4X specification. This translates into the following properties:
 
  * XML literals
  * Embed expressions in the literals using { ... } escapes.
@@ -165,11 +169,13 @@ h3(#resource). Resources
 
 Resources are declared in a scope, are associated with a name by assignment and declare the relative path that denotes the relationship with other resources. In the default case (not other resource is provided), it's relative to the running process. Processes use resource references for the purpose of receiving requests on that resource or passing the absolute resource path. Once first assigned, resources are read-only.
 
-A resource that specifies a static path will be instantiated by appending that path to the instance URL. A resource that specifies a path relative to another resource will be instantiated by appending that path to the URL of the other resource. We use the $ notation to reference another resource, so the path $foo/bar will append /bar to the URL denoted by the resource $foo. Note that at the time of this writing, the $ notation isn't supported yet.
+A resource that specifies a static path will be instantiated by appending that path to the instance URL. A resource that specifies a path relative to another resource will be instantiated by appending that path to the URL of the other resource. We use the $ notation to reference another resource, so the path $foo/bar will append /bar to the URL denoted by the resource $foo. Note that at the time of this writing, %[todo]the $ notation isn't supported yet%.
 
 Resources can rely on URL patterns defined between curly braces (ex: "/ballot/{name}"). The way patterns are bound to variable will be defined in the "Providing a Resource":#providing section.
 
 Process definitions, once deployed, exist permanently with their own resource exposed under the deployment URL. The process resources react to POST requests by starting a new process execution (or process instance) that gets, from this point, its own resource. This resource is implicitly defined in all processes as _self_. 
+
+New resources can be %[todo]instantiated during the execution of a process% even though it's unimplemented for now.
 
 Example:
 
@@ -322,7 +328,6 @@ request(orderingSystem, "POST", req);
 {% endhighlight %}
 
 h2(#running_env). Running Environment
-
 
 {% highlight simpel %}
 {% endhighlight %}
