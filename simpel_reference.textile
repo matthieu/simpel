@@ -20,7 +20,7 @@ All statements in SimPEL are required to end with a semicolon.
 
 h3(#process). Process
 
-The _process_ construct is the root of a process definition. It defines a name as a ns_id and contains the whole process body:
+The _process_ construct is the root of a process definition. It's also the root "scope":#scope.  It declares a name as a ns_id and contains the whole process body as a sequence of statements:
 
 {% highlight text %}
 process  :  'process' ns_id body;
@@ -159,9 +159,65 @@ inviteEmail.body = "Hi, how are you?";
 
 h2(#rest_support). RESTful Communications
 
+SimPEL has several constructs to enable HTTP-based communication. The goal is to make receiving and issuing HTTP requests easy, hiding the low level details in the common case without making complicated interactions impossible. In addition to the basic HTTP support, SimPEL adds constraints to enable characteristics like idempotence or cache control.
+
+h3(#resource). Resources
+
+Resources are declared in a scope, are associated with a name by assignment and declare the relative path that denotes the relationship with other resources. In the default case (not other resource is provided), it's relative to the running process. Processes use resource references for the purpose of receiving requests on that resource or passing the absolute resource path. Once first assigned, resources are read-only.
+
+A resource that specifies a static path will be instantiated by appending that path to the instance URL. A resource that specifies a path relative to another resource will be instantiated by appending that path to the URL of the other resource. We use the $ notation to reference another resource, so the path $foo/bar will append /bar to the URL denoted by the resource $foo. Note that at the time of this writing, the $ notation isn't supported yet.
+
+Resources can rely on URL patterns defined between curly braces (ex: "/ballot/{name}"). The way patterns are bound to variable will be defined in the "Providing a Resource":#providing section.
+
+Process definitions, once deployed, exist permanently with their own resource exposed under the deployment URL. The process resources react to POST requests by starting a new process execution (or process instance) that gets, from this point, its own resource. This resource is implicitly defined in all processes as _self_. 
+
+Example:
+
+{% highlight simpel %}
+cancelResource = resources("/cancel");
+{% endhighlight %}
+
 h3(#providing). Providing a Resource
 
-h2(#calling). Calling Resources
+The first way to provide a resource in a process is by using *_receive_*:
+
+{% highlight text %}
+receive       : receive_base param_block | receive_base SEMI;
+receive_base  : 'receive' '(' ID ')';
+{% endhighlight %}
+
+The _receive_ takes a resource for parameter and waits for a POST request. Once the POST is received, it completes normally. All processes should start with a receive on _self_ called the instantiating receive. A process will reply to a POST request on an instantiating receive using the 201 (Created) status code and will provide the URL of the new process instance in the Location HTTP header.  Subsequently a process can have any number of receives, including on _self_.
+
+The payload received by a _receive_ can either be associated to a variable using assignment or by passing it into a block. The block scopes the variable and enables a couple of shortcuts for replies.
+
+Each _receive_ must be matched with a _reply_ on the same resource:
+
+{% highlight text %}
+reply: 'reply' '(' (ID (',' ID)?)? ')';
+{% endhighlight %}
+
+The first _reply_ parameter is used to provide the payload to be sent back to the caller. It has to be a variable, %[todo]expressions aren't accepted% at the moment. The second parameter is the resource replying from (more than one interaction can be going on at once in a process). The payload can be omitted if the response can be empty, in which case only headers will be sent back. In a block _receive_, the resource can be omitted as well, it will automatically use the same resource as the _receive_. In a block _receive_, the _reply_ can be completely omitted, in which case an implicit empty _reply_ will be inserted as the last statement in the block.
+
+To implement a resource over recurring requests, a SimPEL process can rely on *event handlers*. Handlers are associated to a "scope":#scope and live as long as their scope.
+
+The _onQuery_ event handler responds to GET requests, as such it's required to have no side effect. As a consequence, an _onQuery_ can only modify variables local to its block and has read-only access to other variables (%[todo]not enforced for now).
+
+onquery:  'onQuery' '(' ID ')' param_block;
+
+If the resource provided to _onQuery_ includes URL patterns, the block can declare parameters that will be associated to pattern element values extracted from the URL. As an example, if a resource is exposed under "/ballot/{name}" and the URL called is "/ballot/john", the _onQuery_ block can define a |name| parameter that will be initialized to "john".
+
+%[todo]At the moment, no cache control is implemented% but the process engine can use cache control to optimize the GET method by handling conditional GETs and setting the Last-Modified/ETag headers. These are set to detect any change in the state of the process instance (which excludes responding to a GET request).
+
+The _onReceive_ is an event handler equivalent to a classic receive:
+
+onreceive:  'onReceive' '(' ID ')' param_block;
+
+The first block parameter defined on an _onReceive_ block will be initialized with the received payload. Subsequent block parameters are associated with eventual URL patterns.
+
+The _onUpdate_ event handler (%[todo]unsupported for now%) is used to modify state and responds to PUT requests:
+
+h3(#calling). Calling Resources
+
 
 h2(#running_env). Running Environment
 
