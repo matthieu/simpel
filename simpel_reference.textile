@@ -198,11 +198,13 @@ reply: 'reply' '(' (ID (',' ID)?)? ')';
 
 The first _reply_ parameter is used to provide the payload to be sent back to the caller. It has to be a variable, %[todo]expressions aren't accepted% at the moment. The second parameter is the resource replying from (more than one interaction can be going on at once in a process). The payload can be omitted if the response can be empty, in which case only headers will be sent back. In a block _receive_, the resource can be omitted as well, it will automatically use the same resource as the _receive_. In a block _receive_, the _reply_ can be completely omitted, in which case an implicit empty _reply_ will be inserted as the last statement in the block.
 
-To implement a resource over recurring requests, a SimPEL process can rely on *event handlers*. Handlers are associated to a "scope":#scope and live as long as their scope.
+To implement a resource over recurring requests, a SimPEL process can rely on *event handlers*. Handlers are associated to a "scope":#scope and live as long as their scope. Like a _receive_, all event handlers have to be matched with a _reply_.
 
 The _onQuery_ event handler responds to GET requests, as such it's required to have no side effect. As a consequence, an _onQuery_ can only modify variables local to its block and has read-only access to other variables (%[todo]not enforced for now).
 
+{% highlight text %}
 onquery:  'onQuery' '(' ID ')' param_block;
+{% endhighlight %}
 
 If the resource provided to _onQuery_ includes URL patterns, the block can declare parameters that will be associated to pattern element values extracted from the URL. As an example, if a resource is exposed under "/ballot/{name}" and the URL called is "/ballot/john", the _onQuery_ block can define a |name| parameter that will be initialized to "john".
 
@@ -210,14 +212,114 @@ If the resource provided to _onQuery_ includes URL patterns, the block can decla
 
 The _onReceive_ is an event handler equivalent to a classic receive:
 
+{% highlight text %}
 onreceive:  'onReceive' '(' ID ')' param_block;
+{% endhighlight %}
 
 The first block parameter defined on an _onReceive_ block will be initialized with the received payload. Subsequent block parameters are associated with eventual URL patterns.
 
 The _onUpdate_ event handler (%[todo]unsupported for now%) is used to modify state and responds to PUT requests:
 
+{% highlight text %}
+onupdate :  'onUpdate' '(' r=ID ')' param_block;
+{% endhighlight %}
+
+Conditional PUT should be supported.
+
+The _onDelete_ event handler (%[todo]unsupported for now%) is used to modify state and responds to DELETE requests:
+
+{% highlight text %}
+onDelete:  'onDelete' '(' r=ID ')' param_block;
+{% endhighlight %}
+
+Example (see the "Resource Fun":/resource_fun.html tutorial for the complete process):
+
+{% highlight simpel %}
+tally = resource("/tally");
+ballot = resource("/ballot/{name}");
+close = resource("/close");
+cancel = resource("/cancel");
+
+scope {
+  receive(cancel) { |r|
+    cancelResp = <vote>Vote canceled.</vote>;
+    reply(cancelResp);
+  }
+} onQuery(self) {
+  reply(vote);
+} onQuery(tally) {
+  currentTally = getCurrentTally(ballots);
+  reply(currentTally);
+} onReceive(ballot) { |b, name|
+  if (voteOpen == true) {
+    ballots = updateBallots(ballots, b.ballot, name);
+    userBallot = getUserBallot(ballots, name);
+    reply(userBallot);
+  } else {
+    resp = <vote>Vote is closed.</vote>;
+    reply(resp);
+  }
+} onQuery(ballot) { |name|
+  userBallot = getUserBallot(ballots, name);
+  if (userBallot.length != 0) {
+    reply(userBallot);
+  } else {
+    info = createBallotInfo(vote, self, name);
+    reply(info);
+  }
+} onReceive(close) {
+  voteOpen = false;
+  finalTally = getCurrentTally(ballots);
+  reply(finalTally);
+}
+{% endhighlight %}
+
 h3(#calling). Calling Resources
 
+To build a request and call a URL, the _request_ construct should be used:
+
+{% highlight text %}
+request:      request_base param_block | request_base SEMI;
+request_base: 'request' '(' expr (',' STRING (',' ID)?)? ')';
+{% endhighlight %}
+
+The first parameter is an expression that must evaluate to an absolute URL string. The HTTPS URL scheme is supported. The second parameter is a case-insensitive string providing the HTTP method that should be called ("get", "put", "post", "delete"; "head" is %[todo]unsupported for now%). The third parameter is a variable providing the entity-body and the headers that will be sent in the request.
+
+In the case of a GET request, both the method and the variable (obviously GET requests have no body) can be omitted.
+
+HTTP headers can be provided using the _headers_ special element available on all request variables. Headers can be both set and read. Headers that normally include a dash ('-') character in the HTTP specification are replaced with an underscore ('_'), for example Content-Type becomes Content_Type. For HTTP basic authentication, a special _basicAuth_ sub-element of _headers_ can be used to set the loging and password, using elements of the same name.
+
+Request examples:
+
+{% highlight simpel %}
+process AllMethods {
+   receive(self) { |query|
+       getRes = request(testRoot);
+       res = getRes.text();
+
+       postMsg = <foo>foo</foo>;
+       postRes = request(testRoot, "post", postMsg);
+       res = res + postRes.text();
+
+       putMsg = <bar>bar</bar>;
+       putRes = request(testRoot, "put", putMsg);
+       res = res + putRes.text();
+
+       request(testRoot, "delete");
+       reply(res);
+   }
+}
+{% endhighlight %}
+
+Header example:
+
+{% highlight simpel %}
+req = <order><id>{orderId}</id></order>
+req.headers.basicAuth.login = "scott";
+req.headers.basicAuth.password = "tiger";
+req.headers.Accept = "application/xml";
+request(orderingSystem, "POST", req);
+{% endhighlight %}
 
 h2(#running_env). Running Environment
 
