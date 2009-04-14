@@ -21,15 +21,25 @@
           <img alt='buildr' src='images/intalio-oss.gif' />
         </a>
       </div>
-
+      <div class="quick-links">
+        <ul>
+          <li class="first"><a id="download-link" href="http://www.intalio.com">Corporate</a></li>
+          <li><a id="blog" href="http://bpms.intalio.com">Community</a></li>
+        </ul>
+      </div>
       <div id="main-nav-wrapper">
         <div class="main-nav-left"></div>
         <div id="main-nav">
           <ul>
             <li class="first"><a title="Intalio|OSS" href="http://oss.intalio.com" id="nav-projects">Projects</a></li>
-            <li><a title="Source Repository" href="http://github.com/intalio/simpel" id="nav-github">Github</a></li>
+            <li><a title="Source Repository" href="http://oss.intalio.com/blog" id="nav-blog">Blog</a></li>
           </ul>
-          <div class='search'></div>
+          <div class="search">
+            <form method="get" action="/index.php">
+              <input type="text" class="field" name="s" id="s" value="" onfocus="if (this.value == 'Search') {this.value = '';}" onblur="if (this.value == '') {this.value = 'Search';}" />
+              <input class="btn-go hoverswap" type="image" src="http://oss.intalio.com/wp-content/themes/i2/images/blank.gif" alt="Search" value="Go" />
+            </form>
+          </div>
         </div>
         <div class="main-nav-right"></div>
       </div>
@@ -37,35 +47,23 @@
 
     <div id='wrap' class='center-round'>
       <div class='center-content'/>
-        <div class='box-top'><span/></div>
-          <div id='pages'>
-            <ol class='toc'>
-              <li>Start Here
-              <ol class="toc">
-                <li><a href='index.html'>Welcome</a></li>
-                <li><a href='download.html'>Download</a></li>
-              </ol>
-              </li>
-              <li>Tutorials
-              <ol class="toc">
-                <li><a href='first_process.html'>Your First Process</a></li>
-                <li><a href='resource_fun.html'>Resource Fun</a></li>
-                <li><a href='calling_out.html'>Calling Out</a></li>
-              </ol>
-              </li>
-              <li>Reference
-              <ol  class="toc">
-                <li><a href='simpel_reference.html'>SimPEL Reference</a></li>
-                <li><a href='configuration.html'>Configuration</a></li>
-              </ol>
-              </li>
-              <li>Get Involved
-              <ol  class="toc">
-                <li><a href='mailing_lists.html'>Mailing Lists</a></li>
-                <li><a href='contributing.html'>Contributing</a></li>
-              </ol>
-              </li>
-            </ol>
+        <div class='box-top'></div>
+          <div id='secondary-nav'>
+            <ul>
+              <li class="nav-header">Start Here</li>
+              <li><a class="nav2" href='index.html'>Welcome</a></li>
+              <li><a class="nav2" href='download.html'>Download</a></li>
+              <li class="nav-header">Tutorials</li>
+              <li><a class="nav2" href='first_process.html'>Your First Process</a></li>
+              <li><a class="nav2" href='resource_fun.html'>Resource Fun</a></li>
+              <li><a class="nav2" href='calling_out.html'>Calling Out</a></li>
+              <li class="nav-header">Reference</li>
+              <li><a class="nav2" href='simpel_reference.html'>SimPEL Reference</a></li>
+              <li><a class="nav2" href='configuration.html'>Configuration</a></li>
+              <li class="nav-header">Get Involved</li>
+              <li><a class="nav2" href='mailing_lists.html'>Mailing Lists</a></li>
+              <li><a class="nav2" href='contributing.html'>Contributing</a></li>
+            </ul>
           </div>
           <div id='content'>
             <h1 id='{{ page.title | downcase | replace(' ', '_') }}'>{{ page.title }}</h1>
